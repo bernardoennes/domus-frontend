@@ -23,6 +23,32 @@
   gap: 12px;
 }
 
+.nameField {
+  display: grid;
+  gap: 8px;
+}
+
+.nameField label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.nameField input {
+  width: 100%;
+  height: var(--control-height);
+  border-radius: var(--control-radius);
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: var(--control-font-size);
+  padding: 0 var(--control-padding-x);
+}
+
+.nameField input:focus {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 1px;
+}
+
 .passwordList {
   display: grid;
   gap: 8px;

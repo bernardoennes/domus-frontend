@@ -7,11 +7,7 @@ import { buildUserProfile } from '../../../services/userService.js'
 import { canManageCondominium } from '../../../utils/permissions.js'
 
 function getQueryErrorMessage(error) {
-  if (error?.code === '42501' || error?.status === 403) {
-    return 'Não foi possível carregar os dados. Verifique suas permissões e tente novamente.'
-  }
-
-  return 'Não foi possível carregar os dados. Tente novamente.'
+  return error?.message ?? 'Não foi possível carregar os dados. Tente novamente.'
 }
 
 export function useSettingsPageState({ user, membership }) {
@@ -108,10 +104,7 @@ export function useSettingsPageState({ user, membership }) {
       setResidentsError('')
       return result
     } catch (error) {
-      const message = error?.code === '42501'
-        ? getQueryErrorMessage(error)
-        : error?.message ?? 'Não foi possível cadastrar o condômino.'
-      throw new Error(message)
+      throw new Error(error?.message ?? 'Não foi possível cadastrar o condômino.')
     } finally {
       setIsCreatingResident(false)
     }
@@ -139,10 +132,7 @@ export function useSettingsPageState({ user, membership }) {
       setEmployeesError('')
       return result
     } catch (error) {
-      const message = error?.code === '42501'
-        ? getQueryErrorMessage(error)
-        : error?.message ?? 'Não foi possível cadastrar o funcionário.'
-      throw new Error(message)
+      throw new Error(error?.message ?? 'Não foi possível cadastrar o funcionário.')
     } finally {
       setIsCreatingEmployee(false)
     }

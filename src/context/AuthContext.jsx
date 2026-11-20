@@ -1,56 +1,20 @@
 import { createContext, useContext, useState } from 'react'
-import { loginUser } from '../services/authService.js'
-import { supabase } from '../lib/supabase.js'
+import { getCurrentSession, loginUser, logoutUser } from '../services/authService.js'
 
 const AuthContext = createContext(null)
 
-const USER_STORAGE_KEY = 'condominio:user'
-const MEMBERSHIP_STORAGE_KEY = 'condominio:membership'
-const AUTH_STORAGE_KEY = 'condominio:auth'
-
-function parseStoredItem(storageKey) {
+function loadStoredSession() {
   try {
-    const value = sessionStorage.getItem(storageKey)
-
-    if (!value) {
-      return null
-    }
-
-    return JSON.parse(value)
+    return getCurrentSession()
   } catch {
     return null
   }
 }
 
-function setStoredItem(storageKey, value) {
-  if (value) {
-    sessionStorage.setItem(storageKey, JSON.stringify(value))
-    return
-  }
-
-  sessionStorage.removeItem(storageKey)
-}
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => parseStoredItem(USER_STORAGE_KEY))
-  const [membership, setMembership] = useState(() => parseStoredItem(MEMBERSHIP_STORAGE_KEY))
-  const [auth, setAuth] = useState(() => parseStoredItem(AUTH_STORAGE_KEY))
+  const [session, setSession] = useState(loadStoredSession)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
-
-  const setSafeSession = (loginResult) => {
-    const nextUser = loginResult?.user ?? null
-    const nextMembership = loginResult?.membership ?? null
-    const nextAuth = loginResult?.auth ?? null
-
-    setUser(nextUser)
-    setMembership(nextMembership)
-    setAuth(nextAuth)
-
-    setStoredItem(USER_STORAGE_KEY, nextUser)
-    setStoredItem(MEMBERSHIP_STORAGE_KEY, nextMembership)
-    setStoredItem(AUTH_STORAGE_KEY, nextAuth)
-  }
 
   const signIn = async (credentials) => {
     setIsLoading(true)
@@ -62,7 +26,7 @@ export function AuthProvider({ children }) {
         password: credentials.password,
       })
 
-      setSafeSession(loginData)
+      setSession(loginData)
       return loginData
     } catch (loginError) {
       setError(loginError.message)
@@ -74,14 +38,16 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     setError('')
-    await supabase.auth.signOut()
-    setSafeSession(null)
+    logoutUser()
+    setSession(null)
   }
+
+  const user = session?.user ?? null
+  const membership = session?.membership ?? null
 
   const contextValue = {
     user,
     membership,
-    auth,
     error,
     isLoading,
     isAuthenticated: Boolean(user && membership),

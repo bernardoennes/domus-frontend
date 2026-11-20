@@ -1,93 +1,58 @@
-import { supabase } from '../lib/supabase.js'
-import { getEdgeFunctionError, getRequestError } from './edgeFunctionError.js'
+import { readDatabase, updateDatabase } from '../lib/localDatabase.js'
+import { addMember, listMembers, removeMember } from './memberService.js'
 
-function normalizeEmployee(item) {
-  const membership = item.membership ?? {}
-  const profile = membership.users ?? {}
-
-  if (!profile.name) {
-    throw new Error('Não foi possível carregar os dados dos funcionários. Tente novamente.')
-  }
-
-  return {
-    id: item.organisation_user_id,
-    userId: membership.user_id ?? profile.id,
-    name: profile.name,
-    cpfMasked: profile.cpf_masked?.replace(/x/gi, '*') ?? '',
-    cargoCode: item.cargo_code ?? null,
-  }
-}
+const ACCESS_TYPE = 'FUNCIONARIO'
 
 export async function fetchEmployees(organisationId) {
   if (!organisationId) {
     return []
   }
 
-  const { data, error } = await supabase
-    .from('organisation_employees')
-    .select(`
-      organisation_user_id,
-      cargo_code,
-      membership:organisation_users!inner(
-        id,
-        organisation_id,
-        user_id,
-        users(id, name, cpf_masked)
-      )
-    `)
-    .eq('membership.organisation_id', organisationId)
+  const database = readDatabase()
 
-  if (error) {
-    throw getRequestError(error, 'Não foi possível carregar os funcionários. Tente novamente.')
-  }
+  return listMembers(database, organisationId, ACCESS_TYPE).map(({ membership, user, cpfMasked }) => {
+    const details = database.employees.find((item) => item.organisation_user_id === membership.id)
 
-  return (data ?? []).map(normalizeEmployee)
+    return {
+      id: membership.id,
+      userId: user.id,
+      name: user.name,
+      cpfMasked,
+      cargoCode: details?.cargo_code ?? null,
+    }
+  })
 }
 
 export async function provisionFuncionario({ name, cpf, organisationId, cargoCode }) {
-  const { data, error } = await supabase.functions.invoke('provision-funcionario', {
-    body: {
-      name,
-      cpf,
-      organisation_id: organisationId,
+  return updateDatabase((database) => {
+    const membership = addMember(database, { name, cpf, organisationId, accessType: ACCESS_TYPE })
+
+    database.employees.push({
+      organisation_user_id: membership.id,
       cargo_code: cargoCode || null,
-    },
+    })
+
+    return { success: true }
   })
-
-  if (error) {
-    throw getEdgeFunctionError(error, 'Não foi possível cadastrar o funcionário. Tente novamente.')
-  }
-
-  return data
 }
 
 export async function updateEmployeeDetails({ membershipId, cargoCode }) {
-  const { data, error } = await supabase
-    .from('organisation_employees')
-    .update({ cargo_code: cargoCode || null })
-    .eq('organisation_user_id', membershipId)
-    .select('organisation_user_id')
+  updateDatabase((database) => {
+    const details = database.employees.find((item) => item.organisation_user_id === membershipId)
 
-  if (error) {
-    throw getRequestError(error, 'Não foi possível atualizar o funcionário. Tente novamente.')
-  }
+    if (!details) {
+      throw new Error('Este funcionário não foi encontrado.')
+    }
 
-  if (!data?.length) {
-    throw new Error('Você não tem permissão para editar este funcionário.')
-  }
+    details.cargo_code = cargoCode || null
+  })
 }
 
 export async function removeFuncionario({ organisationId, userId }) {
-  const { data, error } = await supabase.functions.invoke('remove-funcionario', {
-    body: {
-      organisation_id: organisationId,
-      user_id: userId,
-    },
+  return updateDatabase((database) => {
+    const membership = removeMember(database, { organisationId, userId, accessType: ACCESS_TYPE })
+    database.employees = database.employees.filter((item) => item.organisation_user_id !== membership.id)
+
+    return { success: true }
   })
-
-  if (error) {
-    throw getEdgeFunctionError(error, 'Não foi possível remover o funcionário. Tente novamente.')
-  }
-
-  return data
 }

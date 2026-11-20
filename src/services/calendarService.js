@@ -1,28 +1,23 @@
-import { supabase } from '../lib/supabase.js'
-import { getRequestError } from './edgeFunctionError.js'
+import { getNextId, readDatabase, updateDatabase } from '../lib/localDatabase.js'
 import { AREA_TYPE_LABELS } from './commonAreaService.js'
 
-function formatApiTime(date, time) {
-  const dateTime = new Date(`${date}T${time}:00`)
-  const offsetMinutes = dateTime.getTimezoneOffset()
-  const sign = offsetMinutes <= 0 ? '+' : '-'
-  const absoluteOffset = Math.abs(offsetMinutes)
-  const offset = `${sign}${String(Math.floor(absoluteOffset / 60)).padStart(2, '0')}:${String(absoluteOffset % 60).padStart(2, '0')}`
-  return `${time}:00${offset}`
+function toMinutes(time) {
+  const [hours, minutes] = String(time).slice(0, 5).split(':').map(Number)
+  return hours * 60 + minutes
 }
 
-function mapApiReservation(reservation, areas, profiles) {
+function mapReservation(reservation, areas, users) {
   const area = areas.find((item) => String(item.id) === String(reservation.reserved_area))
-  const profile = profiles.find((item) => String(item.id) === String(reservation.reserved_by))
+  const user = users.find((item) => String(item.id) === String(reservation.reserved_by))
 
   return {
     id: String(reservation.id),
     areaId: String(reservation.reserved_area),
     areaName: area?.displayName ?? AREA_TYPE_LABELS[area?.area_type] ?? 'Área comum',
-    date: String(reservation.date).slice(0, 10),
-    startTime: String(reservation.start_date).slice(0, 5),
-    endTime: String(reservation.end_date).slice(0, 5),
-    residentName: profile?.name ?? 'Morador',
+    date: reservation.date,
+    startTime: reservation.start_date,
+    endTime: reservation.end_date,
+    residentName: user?.name ?? 'Morador',
     userId: reservation.reserved_by ? String(reservation.reserved_by) : null,
     isEvent: Boolean(reservation.is_event),
     numberOfPeople: reservation.participants,
@@ -35,38 +30,12 @@ export async function fetchCalendarReservations(organisationId, areas) {
     return []
   }
 
-  const areaIds = areas.map((area) => String(area.id))
-  const { data, error } = await supabase
-    .from('reservations')
-    .select('id, reserved_by, reserved_area, date, start_date, end_date, is_event, participants, observations')
-    .eq('is_deleted', false)
-    .in('reserved_area', areaIds)
+  const database = readDatabase()
+  const areaIds = new Set(areas.map((area) => String(area.id)))
 
-  if (error) {
-    throw getRequestError(error, 'Não foi possível carregar as reservas. Tente novamente.')
-  }
-
-  const reservations = data ?? []
-  const userIds = [...new Set(reservations
-    .map((reservation) => reservation.reserved_by)
-    .filter(Boolean)
-    .map(String))]
-  let profiles = []
-
-  if (userIds.length > 0) {
-    const { data: profileData, error: profileError } = await supabase
-      .from('user_profiles_safe')
-      .select('id, name')
-      .in('id', userIds)
-
-    if (profileError) {
-      throw getRequestError(profileError, 'Não foi possível carregar os responsáveis pelas reservas.')
-    }
-
-    profiles = profileData ?? []
-  }
-
-  return reservations.map((reservation) => mapApiReservation(reservation, areas, profiles))
+  return database.reservations
+    .filter((reservation) => areaIds.has(String(reservation.reserved_area)))
+    .map((reservation) => mapReservation(reservation, areas, database.users))
 }
 
 export async function saveCalendarReservation({ organisationId, reservation, area, profile, isEvent }) {
@@ -74,54 +43,84 @@ export async function saveCalendarReservation({ organisationId, reservation, are
     throw new Error('Não foi possível identificar o condomínio desta reserva.')
   }
 
-  const isEditing = Boolean(reservation.id)
-  const body = isEditing
-    ? {
-      action: 'update',
-      id: String(reservation.id),
-      start_date: formatApiTime(reservation.date, reservation.startTime),
-      end_date: formatApiTime(reservation.date, reservation.endTime),
-      is_event: isEvent,
-      participants: reservation.numberOfPeople,
-      observations: reservation.observations,
-    }
-    : {
-      action: 'create',
-      reserved_area: String(area.id),
-      date: reservation.date,
-      start_date: formatApiTime(reservation.date, reservation.startTime),
-      end_date: formatApiTime(reservation.date, reservation.endTime),
-      is_event: isEvent,
-      participants: reservation.numberOfPeople,
-      observations: reservation.observations,
-    }
-  const { data, error } = await supabase.functions.invoke('manage-reservations', { body })
-
-  if (error) {
-    throw getRequestError(error, 'Não foi possível salvar a reserva. Tente novamente.')
+  const details = {
+    start_date: reservation.startTime,
+    end_date: reservation.endTime,
+    is_event: Boolean(isEvent),
+    participants: reservation.numberOfPeople,
+    observations: reservation.observations ?? '',
   }
 
-  if (!data?.reservation) {
-    throw new Error('A API não retornou os dados da reserva salva.')
-  }
+  return updateDatabase((database) => {
+    const isEditing = Boolean(reservation.id)
+    const existing = isEditing
+      ? database.reservations.find((item) => String(item.id) === String(reservation.id))
+      : null
+    const areaId = existing?.reserved_area ?? area?.id
+    const date = existing?.date ?? reservation.date
+    const storedArea = database.areas.find((item) => (
+      String(item.id) === String(areaId) && String(item.organisation_id) === String(organisationId)
+    ))
 
-  return mapApiReservation(data.reservation, [area], [{
-    id: reservation.userId ?? profile?.id,
-    name: reservation.residentName ?? profile?.name,
-  }])
+    if (isEditing && !existing) {
+      throw new Error('Esta reserva não foi encontrada.')
+    }
+
+    if (!storedArea) {
+      throw new Error('A área comum selecionada não foi encontrada.')
+    }
+
+    if (toMinutes(details.start_date) >= toMinutes(details.end_date)) {
+      throw new Error('O horário final precisa ser posterior ao horário inicial.')
+    }
+
+    const hasConflict = database.reservations.some((item) => (
+      item !== existing
+      && String(item.reserved_area) === String(storedArea.id)
+      && item.date === date
+      && toMinutes(details.start_date) < toMinutes(item.end_date)
+      && toMinutes(details.end_date) > toMinutes(item.start_date)
+    ))
+
+    if (hasConflict) {
+      throw new Error('Este horário já possui uma reserva para a área selecionada.')
+    }
+
+    let saved = existing
+
+    if (existing) {
+      Object.assign(existing, details)
+    } else {
+      const reservedBy = reservation.userId ?? profile?.id
+
+      if (!reservedBy) {
+        throw new Error('Não foi possível identificar o responsável pela reserva.')
+      }
+
+      saved = {
+        id: getNextId(database, 'reservations'),
+        reserved_by: reservedBy,
+        reserved_area: storedArea.id,
+        date,
+        ...details,
+      }
+      database.reservations.push(saved)
+    }
+
+    return mapReservation(saved, [area ?? storedArea], database.users)
+  })
 }
 
 export async function deleteCalendarReservation(reservationId) {
-  const { error } = await supabase.functions.invoke('manage-reservations', {
-    body: {
-      action: 'delete',
-      id: String(reservationId),
-    },
-  })
+  updateDatabase((database) => {
+    const remaining = database.reservations.filter((item) => String(item.id) !== String(reservationId))
 
-  if (error) {
-    throw getRequestError(error, 'Não foi possível excluir a reserva. Tente novamente.')
-  }
+    if (remaining.length === database.reservations.length) {
+      throw new Error('Esta reserva não foi encontrada.')
+    }
+
+    database.reservations = remaining
+  })
 }
 
 export function getNationalHolidays(year) {

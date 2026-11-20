@@ -1,5 +1,4 @@
-import { supabase } from '../lib/supabase.js'
-import { getEdgeFunctionError, getRequestError } from './edgeFunctionError.js'
+import { getNextId, readDatabase, updateDatabase } from '../lib/localDatabase.js'
 
 export const AREA_TYPE_LABELS = {
   SWIMMING_POOL: 'Piscina',
@@ -17,17 +16,9 @@ export async function fetchCommonAreas(organisationId) {
     return []
   }
 
-  const { data, error } = await supabase
-    .from('areas')
-    .select('id, area_type, organisation_id, available_weekdays, start_hour, end_hour')
-    .eq('organisation_id', organisationId)
-    .order('id')
-
-  if (error) {
-    throw getRequestError(error, 'Não foi possível carregar as áreas comuns. Tente novamente.')
-  }
-
-  return data ?? []
+  return readDatabase().areas
+    .filter((area) => String(area.organisation_id) === String(organisationId))
+    .sort((first, second) => first.id - second.id)
 }
 
 export async function createCommonArea({
@@ -37,19 +28,31 @@ export async function createCommonArea({
   startHour,
   endHour,
 }) {
-  const { data, error } = await supabase.functions.invoke('create-area', {
-    body: {
-      organisation_id: organisationId,
-      area_type: areaType,
-      available_weekdays: availableWeekdays,
-      start_hour: startHour || null,
-      end_hour: endHour || null,
-    },
-  })
-
-  if (error) {
-    throw getEdgeFunctionError(error, 'Não foi possível cadastrar a área comum. Tente novamente.')
+  if (!AREA_TYPE_LABELS[areaType]) {
+    throw new Error('Selecione um tipo de área comum válido.')
   }
 
-  return data
+  const weekdays = (availableWeekdays ?? []).map(Number)
+
+  if (weekdays.length === 0 || weekdays.some((day) => !Number.isInteger(day) || day < 1 || day > 7)) {
+    throw new Error('Selecione pelo menos um dia da semana.')
+  }
+
+  return updateDatabase((database) => {
+    if (!database.organisations.some((item) => String(item.id) === String(organisationId))) {
+      throw new Error('Não foi possível identificar o condomínio desta área.')
+    }
+
+    const area = {
+      id: getNextId(database, 'areas'),
+      area_type: areaType,
+      organisation_id: database.organisations.find((item) => String(item.id) === String(organisationId)).id,
+      available_weekdays: [...new Set(weekdays)].sort((first, second) => first - second),
+      start_hour: startHour || null,
+      end_hour: endHour || null,
+    }
+
+    database.areas.push(area)
+    return area
+  })
 }

@@ -1,5 +1,5 @@
-import { supabase } from '../lib/supabase.js'
-import { getRequestError } from './edgeFunctionError.js'
+import { readDatabase, readSessionUserId, updateDatabase } from '../lib/localDatabase.js'
+import { createPasswordHash, verifyPassword } from '../lib/password.js'
 
 export function maskCpf(cpf) {
   const digits = String(cpf ?? '').replace(/\D/g, '')
@@ -14,14 +14,22 @@ export function maskCpf(cpf) {
 }
 
 export async function updatePassword({ currentPassword, newPassword }) {
-  const { error } = await supabase.auth.updateUser({
-    password: newPassword,
-    ...(currentPassword ? { currentPassword } : {}),
-  })
+  const userId = readSessionUserId()
+  const user = readDatabase().users.find((item) => item.id === userId)
 
-  if (error) {
-    throw getRequestError(error, 'Não foi possível alterar a senha. Verifique a senha atual e tente novamente.')
+  if (!user) {
+    throw new Error('Sua sessão expirou. Entre novamente para alterar a senha.')
   }
+
+  if (!(await verifyPassword(currentPassword ?? '', user.password))) {
+    throw new Error('Não foi possível alterar a senha. Verifique a senha atual e tente novamente.')
+  }
+
+  const password = await createPasswordHash(newPassword)
+
+  updateDatabase((database) => {
+    database.users.find((item) => item.id === user.id).password = password
+  })
 }
 
 export function buildUserProfile(user, membership) {

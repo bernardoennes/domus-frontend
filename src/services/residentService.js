@@ -1,97 +1,71 @@
-import { supabase } from '../lib/supabase.js'
-import { getEdgeFunctionError, getRequestError } from './edgeFunctionError.js'
+import { readDatabase, updateDatabase } from '../lib/localDatabase.js'
+import { addMember, listMembers, removeMember } from './memberService.js'
 
-function normalizeResident(item) {
-  const membership = item.membership ?? {}
-  const profile = membership.users ?? {}
-
-  if (!profile.name) {
-    throw new Error('Não foi possível carregar os dados dos moradores. Tente novamente.')
-  }
-
-  return {
-    id: item.organisation_user_id,
-    userId: membership.user_id ?? profile.id,
-    name: profile.name,
-    cpfMasked: profile.cpf_masked?.replace(/x/gi, '*') ?? '',
-    block: item.block,
-    unit_number: item.unit_number,
-  }
-}
+const ACCESS_TYPE = 'CONDOMINO'
 
 export async function fetchResidents(organisationId) {
   if (!organisationId) {
     return []
   }
 
-  const { data, error } = await supabase
-    .from('organisation_residents')
-    .select(`
-      organisation_user_id,
-      block,
-      unit_number,
-      membership:organisation_users!inner(
-        id,
-        organisation_id,
-        user_id,
-        users(id, name, cpf_masked)
-      )
-    `)
-    .eq('membership.organisation_id', organisationId)
-    .eq('membership.access_type', 'CONDOMINO')
+  const database = readDatabase()
 
-  if (error) {
-    throw getRequestError(error, 'Não foi possível carregar os moradores. Tente novamente.')
-  }
+  return listMembers(database, organisationId, ACCESS_TYPE).map(({ membership, user, cpfMasked }) => {
+    const details = database.residents.find((item) => item.organisation_user_id === membership.id)
 
-  return (data ?? []).map(normalizeResident)
+    return {
+      id: membership.id,
+      userId: user.id,
+      name: user.name,
+      cpfMasked,
+      block: details?.block ?? '',
+      unit_number: details?.unit_number ?? null,
+    }
+  })
 }
 
 export async function provisionCondomino({ name, cpf, organisationId, block, unitNumber }) {
-  const { data, error } = await supabase.functions.invoke('provision-condomino', {
-    body: {
-      name,
-      cpf,
-      organisation_id: organisationId,
-      block,
-      unit_number: unitNumber,
-    },
-  })
+  const residentBlock = String(block ?? '').trim()
 
-  if (error) {
-    throw getEdgeFunctionError(error, 'Não foi possível cadastrar o morador. Tente novamente.')
+  if (!residentBlock) {
+    throw new Error('Informe o bloco.')
   }
 
-  return data
+  if (!Number.isSafeInteger(Number(unitNumber)) || Number(unitNumber) < 1) {
+    throw new Error('Informe um número de unidade válido.')
+  }
+
+  return updateDatabase((database) => {
+    const membership = addMember(database, { name, cpf, organisationId, accessType: ACCESS_TYPE })
+
+    database.residents.push({
+      organisation_user_id: membership.id,
+      block: residentBlock,
+      unit_number: Number(unitNumber),
+    })
+
+    return { success: true }
+  })
 }
 
 export async function updateResidentDetails({ membershipId, block, unitNumber }) {
-  const { data, error } = await supabase
-    .from('organisation_residents')
-    .update({ block, unit_number: unitNumber })
-    .eq('organisation_user_id', membershipId)
-    .select('organisation_user_id')
+  updateDatabase((database) => {
+    const details = database.residents.find((item) => item.organisation_user_id === membershipId)
 
-  if (error) {
-    throw getRequestError(error, 'Não foi possível atualizar o morador. Tente novamente.')
-  }
+    if (!details) {
+      throw new Error('Este morador não foi encontrado.')
+    }
 
-  if (!data?.length) {
-    throw new Error('Você não tem permissão para editar este morador.')
-  }
+    details.block = block
+    details.unit_number = unitNumber
+  })
 }
 
 export async function removeCondomino({ organisationId, userId }) {
-  const { data, error } = await supabase.functions.invoke('remove-condomino', {
-    body: {
-      organisation_id: organisationId,
-      user_id: userId,
-    },
+  return updateDatabase((database) => {
+    const membership = removeMember(database, { organisationId, userId, accessType: ACCESS_TYPE })
+    database.residents = database.residents.filter((item) => item.organisation_user_id !== membership.id)
+
+    return { success: true }
   })
-
-  if (error) {
-    throw getEdgeFunctionError(error, 'Não foi possível remover o morador. Tente novamente.')
-  }
-
-  return data
 }

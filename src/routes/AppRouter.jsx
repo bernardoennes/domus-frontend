@@ -4,7 +4,7 @@ import AnnouncementsPage from '../pages/announcements/AnnouncementsPage.jsx'
 import ReservationPage from '../pages/calendar/ReservationPage.jsx'
 import HomePage from '../pages/homepage/HomePage.jsx'
 import SettingsPage from '../pages/settings/SettingsPage.jsx'
-import { LoginRoute, ProtectedRoute } from './ProtectedRoute.jsx'
+import { AdminRegistrationRoute, LoginRoute, ProtectedRoute } from './ProtectedRoute.jsx'
 
 export default function AppRouter() {
   return (
@@ -23,6 +23,14 @@ export default function AppRouter() {
           <LoginRoute>
             <AuthPage mode="first-access" />
           </LoginRoute>
+        }
+      />
+      <Route
+        path="/register-admin"
+        element={
+          <AdminRegistrationRoute>
+            <AuthPage mode="register-admin" />
+          </AdminRegistrationRoute>
         }
       />
       <Route

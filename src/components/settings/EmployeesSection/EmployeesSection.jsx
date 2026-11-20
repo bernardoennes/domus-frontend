@@ -68,7 +68,7 @@ export default function EmployeesSection({
     try {
       await onCreate({ name: form.name.trim(), cpf, cargoCode: form.cargoCode })
       setForm(initialForm)
-      toast.success('Funcionário cadastrado. A senha provisória não é exibida.')
+      toast.success('Funcionário cadastrado. Ele define a senha no primeiro acesso, usando o CPF informado.')
     } catch (createError) {
       toast.error(createError.message)
     }

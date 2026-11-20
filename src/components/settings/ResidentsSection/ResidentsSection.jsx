@@ -74,7 +74,7 @@ export default function ResidentsSection({
     try {
       await onCreate({ ...form, cpf, unitNumber })
       setForm(initialForm)
-      toast.success('Condômino cadastrado. A senha provisória não é exibida.')
+      toast.success('Condômino cadastrado. Ele define a senha no primeiro acesso, usando o CPF informado.')
     } catch (createError) {
       toast.error(createError.message)
     }

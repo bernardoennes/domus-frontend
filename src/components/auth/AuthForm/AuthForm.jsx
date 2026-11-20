@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { useAuth } from '../../../context/AuthContext.jsx'
-import { registerFirstAccess } from '../../../services/authService.js'
+import { needsAdminSetup, registerAdmin, registerFirstAccess } from '../../../services/authService.js'
 import { isValidCpf, normalizeCpf } from '../../../utils/cpfValidation.js'
 import BrickLoader from '../../../components/BrickLoader/BrickLoader.jsx'
 import CpfInput from '../CpfInput/CpfInput.jsx'
@@ -15,6 +15,7 @@ const LOGIN_LOCK_DURATION_MS = 5 * 60 * 1000
 const MAX_LOGIN_ATTEMPTS = 5
 
 const initialFormState = {
+  name: '',
   cpf: '',
   password: '',
   confirmPassword: '',
@@ -72,8 +73,9 @@ export default function AuthForm({ mode = 'login' }) {
   const [formError, setFormError] = useState('')
   const [passwordChecks, setPasswordChecks] = useState(getPasswordValidation(''))
   const [lockoutSeconds, setLockoutSeconds] = useState(0)
-  const isFirstAccess = mode === 'first-access'
-
+  const isAdminRegistration = mode === 'register-admin'
+  const isFirstAccess = mode === 'first-access' || isAdminRegistration
+  const canRegisterAdmin = !isFirstAccess && needsAdminSetup()
   useEffect(() => {
     if (isFirstAccess) {
       return undefined
@@ -209,24 +211,26 @@ export default function AuthForm({ mode = 'login' }) {
       }
 
       try {
-        const result = await registerFirstAccess({
-          cpf: normalizedCpf,
-          password: formState.password,
-        })
+        const result = isAdminRegistration
+          ? await registerAdmin({
+            name: formState.name,
+            cpf: normalizedCpf,
+            password: formState.password,
+          })
+          : await registerFirstAccess({
+            cpf: normalizedCpf,
+            password: formState.password,
+          })
 
-        if (result?.first_access_completed !== true) {
-          throw new Error('Não foi possível confirmar a conclusão do primeiro acesso.')
+        if (isAdminRegistration ? result?.admin_registered !== true : result?.first_access_completed !== true) {
+          throw new Error('Não foi possível confirmar a conclusão do cadastro.')
         }
 
-        toast.success('Cadastro realizado com sucesso!')
+        toast.success(isAdminRegistration ? 'Administrador cadastrado com sucesso!' : 'Cadastro realizado com sucesso!')
         resetSensitiveFields()
         navigate('/login')
       } catch (registerError) {
-        if (registerError?.status === 401) {
-          toast.error('Primeiro acesso bloqueado pelo gateway. A Edge Function complete-first-access precisa ser republicada com verify_jwt desativado.')
-        } else {
-          toast.error(registerError.message)
-        }
+        toast.error(registerError.message)
       }
 
       return
@@ -251,12 +255,32 @@ export default function AuthForm({ mode = 'login' }) {
 
   return (
     <section className={styles.authCard}>
-      <h1>{isFirstAccess ? 'Primeiro acesso' : 'Login'}</h1>
+      <h1>{isAdminRegistration ? 'Cadastrar administrador' : isFirstAccess ? 'Primeiro acesso' : 'Login'}</h1>
       <p>
-        {isFirstAccess ? 'Informe seu CPF e defina sua senha.' : 'Entre com seu CPF e senha.'}
+        {isAdminRegistration
+          ? 'Ainda não há usuários. Informe os dados do síndico e defina a senha.'
+          : isFirstAccess
+            ? 'Informe seu CPF e defina sua senha.'
+            : 'Entre com seu CPF e senha.'}
       </p>
 
       <form className={styles.form} onSubmit={handleSubmit}>
+        {isAdminRegistration && (
+          <div className={styles.nameField}>
+            <label htmlFor="name">Nome completo</label>
+            <input
+              id="name"
+              type="text"
+              name="name"
+              value={formState.name}
+              onChange={handleFieldChange}
+              placeholder="Nome do síndico"
+              autoComplete="name"
+              required
+            />
+          </div>
+        )}
+
         <CpfInput
           id="cpf"
           label="CPF"
@@ -315,11 +339,13 @@ export default function AuthForm({ mode = 'login' }) {
         >
           {isLoading
             ? <BrickLoader size="sm" inline />
-            : isFirstAccess
-              ? 'Cadastrar senha'
-              : lockoutSeconds > 0
-                ? `Bloqueado (${lockoutSeconds}s)`
-                : 'Entrar'}
+            : isAdminRegistration
+              ? 'Cadastrar administrador'
+              : isFirstAccess
+                ? 'Cadastrar senha'
+                : lockoutSeconds > 0
+                  ? `Bloqueado (${lockoutSeconds}s)`
+                  : 'Entrar'}
         </button>
 
         {!isFirstAccess && (
@@ -329,6 +355,26 @@ export default function AuthForm({ mode = 'login' }) {
             onClick={() => navigate('/first-steps')}
           >
             Não tem conta? <span>Acesse aqui</span>
+          </button>
+        )}
+
+        {canRegisterAdmin && (
+          <button
+            type="button"
+            className={styles.linkButton}
+            onClick={() => navigate('/register-admin')}
+          >
+            Primeira vez aqui? <span>Cadastrar administrador</span>
+          </button>
+        )}
+
+        {isFirstAccess && (
+          <button
+            type="button"
+            className={styles.linkButton}
+            onClick={() => navigate('/login')}
+          >
+            Já tem conta? <span>Entrar</span>
           </button>
         )}
       </form>
