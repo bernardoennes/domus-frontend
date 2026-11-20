@@ -22,7 +22,7 @@ export async function updatePassword({ currentPassword, newPassword }) {
   }
 
   if (!(await verifyPassword(currentPassword ?? '', user.password))) {
-    throw new Error('Não foi possível alterar a senha. Verifique a senha atual e tente novamente.')
+    throw new Error('Senha atual incorreta. Verifique e tente novamente.')
   }
 
   const password = await createPasswordHash(newPassword)

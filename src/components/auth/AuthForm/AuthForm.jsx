@@ -1,13 +1,14 @@
-import { CheckCircle, XCircle } from '@phosphor-icons/react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { useAuth } from '../../../context/AuthContext.jsx'
 import { needsAdminSetup, registerAdmin, registerFirstAccess } from '../../../services/authService.js'
 import { isValidCpf, normalizeCpf } from '../../../utils/cpfValidation.js'
+import { getPasswordValidation } from '../../../utils/passwordValidation.js'
 import BrickLoader from '../../../components/BrickLoader/BrickLoader.jsx'
 import CpfInput from '../CpfInput/CpfInput.jsx'
 import PasswordInput from '../PasswordInput/PasswordInput.jsx'
+import PasswordRequirements from '../PasswordRequirements/PasswordRequirements.jsx'
 import styles from './AuthForm.module.css'
 
 const LOGIN_LOCK_KEY = 'condominio:loginLock'
@@ -19,19 +20,6 @@ const initialFormState = {
   cpf: '',
   password: '',
   confirmPassword: '',
-}
-
-const passwordRules = [
-  { key: 'length', label: 'Pelo menos 8 caracteres', test: (value) => value.length >= 8 },
-  { key: 'number', label: 'Conter número', test: (value) => /\d/.test(value) },
-  { key: 'special', label: 'Conter caractere especial', test: (value) => /[^A-Za-z0-9]/.test(value) },
-]
-
-function getPasswordValidation(password) {
-  return passwordRules.map((rule) => ({
-    ...rule,
-    isValid: rule.test(password),
-  }))
 }
 
 function readLoginLockState() {
@@ -201,7 +189,7 @@ export default function AuthForm({ mode = 'login' }) {
       const invalidRule = passwordChecks.find((rule) => !rule.isValid)
 
       if (invalidRule) {
-        toast.error(`A senha deve conter ${invalidRule.label.toLowerCase()}.`)
+        toast.error(invalidRule.message)
         return
       }
 
@@ -300,23 +288,7 @@ export default function AuthForm({ mode = 'login' }) {
         />
 
         {isFirstAccess && (
-          <div className={styles.passwordList}>
-            {passwordChecks.map((rule) => {
-              const Icon = rule.isValid ? CheckCircle : XCircle
-
-              return (
-                <div
-                  key={rule.key}
-                  className={`${styles.passwordRule} ${
-                    rule.isValid ? styles.passwordRuleValid : styles.passwordRuleInvalid
-                  }`}
-                >
-                  <Icon size={16} weight="fill" />
-                  <span>{rule.label}</span>
-                </div>
-              )
-            })}
-          </div>
+          <PasswordRequirements checks={passwordChecks.filter((rule) => rule.key !== 'maximum')} />
         )}
 
         {isFirstAccess && (

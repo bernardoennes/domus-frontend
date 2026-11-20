@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, House, List, Moon, Sun, UserCircle, X } from '@phosphor-icons/react'
 import ProfileModal from '../ProfileModal/ProfileModal.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
@@ -52,12 +52,19 @@ export default function Header({
         mobileMenuOpen ? styles.mobileMenuOpen : '',
       ].filter(Boolean).join(' ')}
     >
-      <div className={styles.brandBlock}>
+      <Link
+        to="/"
+        className={styles.brandBlock}
+        onClick={() => {
+          setIsProfileOpen(false)
+          closeMobileMenu()
+        }}
+      >
         <House className={styles.brandIcon} size={23} weight="fill" aria-hidden="true" />
         <div>
           <strong>Domus</strong>
         </div>
-      </div>
+      </Link>
       {onNavigationToggle && (
         <button
           type="button"

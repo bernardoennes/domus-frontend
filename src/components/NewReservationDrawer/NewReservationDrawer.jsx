@@ -12,6 +12,7 @@ export default function NewReservationDrawer({
   areasError,
   isLoadingAreas,
   areas,
+  canManageAreas,
   selectedDate,
   onDateChange,
   disableAreaAndDate,
@@ -91,7 +92,7 @@ export default function NewReservationDrawer({
         ) : areas.length === 0 ? (
           <div className={styles.stateMessage}>
             Nenhuma área comum cadastrada para este condomínio.
-            <Link to="/settings?section=areas">Ver áreas comuns</Link>
+            {canManageAreas && <Link to="/settings?section=areas">Ver áreas comuns</Link>}
           </div>
         ) : (
           <form className={styles.form} onSubmit={onSubmit}>

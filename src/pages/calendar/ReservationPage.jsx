@@ -16,11 +16,12 @@ import styles from './ReservationPage.module.css'
 export default function ReservationPage() {
   const { user, membership } = useAuth()
   const profile = buildUserProfile(user, membership)
+  const canManage = canManageCondominium(membership)
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
   const reservations = useReservations({
     organisationId: membership?.organisation_id,
     profile,
-    isSyndic: canManageCondominium(membership),
+    isSyndic: canManage,
   })
   const { areasState, form } = reservations
   const overlayClass = isSidebarExpanded ? ` ${styles.overlayVisible}` : ''
@@ -99,7 +100,7 @@ export default function ReservationPage() {
         </main>
       </div>
 
-      <NewReservationDrawer {...form.drawerProps} />
+      <NewReservationDrawer {...form.drawerProps} canManageAreas={canManage} />
       <DeleteReservationDialog
         reservation={reservations.reservationToDelete}
         onCancel={() => reservations.setReservationToDelete(null)}

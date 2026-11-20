@@ -142,10 +142,30 @@
 
 .passwordField {
   display: grid;
+  align-content: start;
   gap: 6px;
   min-width: 0;
   color: var(--text-secondary);
   font-size: 12px;
+}
+
+.requirements {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.requirements > div {
+  justify-items: start;
+  margin-top: 6px;
+  text-align: left;
+}
+
+.errorBox {
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-text);
 }
 
 .passwordInputWrapper {
@@ -163,6 +183,13 @@
   background: var(--input-bg);
   color: var(--text-primary);
   font-size: var(--control-font-size);
+}
+
+.passwordInputWrapper input:focus-visible,
+.visibilityButton:focus-visible,
+.primaryButton:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
 }
 
 .visibilityButton {

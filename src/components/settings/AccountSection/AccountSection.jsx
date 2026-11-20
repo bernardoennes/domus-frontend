@@ -4,6 +4,8 @@ import { toast } from 'react-toastify'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext.jsx'
 import { updatePassword } from '../../../services/userService.js'
+import { getPasswordValidation } from '../../../utils/passwordValidation.js'
+import PasswordRequirements from '../../auth/PasswordRequirements/PasswordRequirements.jsx'
 import styles from './AccountSection.module.css'
 
 export default function AccountSection({ profile, hideTitleOnMobile = false }) {
@@ -12,6 +14,8 @@ export default function AccountSection({ profile, hideTitleOnMobile = false }) {
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [visiblePasswords, setVisiblePasswords] = useState({})
   const [isSavingPassword, setIsSavingPassword] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+  const passwordChecks = getPasswordValidation(passwordForm.newPassword)
   const passwordFields = [
     { name: 'currentPassword', label: 'Senha atual', autoComplete: 'current-password' },
     { name: 'newPassword', label: 'Nova senha', autoComplete: 'new-password' },
@@ -28,8 +32,11 @@ export default function AccountSection({ profile, hideTitleOnMobile = false }) {
   const handlePasswordSubmit = async (event) => {
     event.preventDefault()
 
-    if (passwordForm.newPassword.length < 8 || passwordForm.newPassword.length > 128) {
-      toast.error('A nova senha deve ter entre 8 e 128 caracteres.')
+    setPasswordError('')
+    const invalidRule = passwordChecks.find((rule) => !rule.isValid)
+
+    if (invalidRule) {
+      toast.error(invalidRule.message)
       return
     }
 
@@ -46,7 +53,7 @@ export default function AccountSection({ profile, hideTitleOnMobile = false }) {
       setVisiblePasswords({})
       toast.success('Senha alterada com sucesso.')
     } catch (error) {
-      toast.error(error.message ?? 'Não foi possível alterar a senha.')
+      setPasswordError(error.message ?? 'Não foi possível alterar a senha.')
     } finally {
       setIsSavingPassword(false)
     }
@@ -98,17 +105,20 @@ export default function AccountSection({ profile, hideTitleOnMobile = false }) {
               const VisibilityIcon = isVisible ? EyeSlash : Eye
 
               return (
-                <label key={field.name} className={styles.passwordField}>
-                  <span>{field.label}</span>
+                <div key={field.name} className={styles.passwordField}>
+                  <label htmlFor={field.name}>{field.label}</label>
                   <div className={styles.passwordInputWrapper}>
                     <input
+                      id={field.name}
                       type={isVisible ? 'text' : 'password'}
                       autoComplete={field.autoComplete}
+                      aria-describedby={field.name === 'newPassword' ? 'new-password-requirements' : undefined}
                       required
                       value={passwordForm[field.name]}
-                      onChange={(event) =>
+                      onChange={(event) => {
                         setPasswordForm({ ...passwordForm, [field.name]: event.target.value })
-                      }
+                        setPasswordError('')
+                      }}
                     />
                     <button
                       type="button"
@@ -125,10 +135,15 @@ export default function AccountSection({ profile, hideTitleOnMobile = false }) {
                       <VisibilityIcon size={18} aria-hidden="true" />
                     </button>
                   </div>
-                </label>
+                </div>
               )
             })}
           </div>
+          <div className={styles.requirements}>
+            <span>Requisitos da nova senha</span>
+            <PasswordRequirements id="new-password-requirements" checks={passwordChecks} />
+          </div>
+          {passwordError && <div className={styles.errorBox} role="alert">{passwordError}</div>}
           <button type="submit" className={styles.primaryButton} disabled={isSavingPassword}>
             {isSavingPassword ? 'Salvando...' : 'Alterar senha'}
           </button>
