@@ -5,6 +5,7 @@ import ReservationPage from '../pages/calendar/ReservationPage.jsx'
 import HomePage from '../pages/homepage/HomePage.jsx'
 import SettingsPage from '../pages/settings/SettingsPage.jsx'
 import { AdminRegistrationRoute, LoginRoute, ProtectedRoute } from './ProtectedRoute.jsx'
+import Tickets from '../pages/tickets/ticketpage.jsx'
 
 export default function AppRouter() {
   return (
@@ -70,6 +71,14 @@ export default function AppRouter() {
         element={
           <ProtectedRoute>
             <AnnouncementsPage />
+          </ProtectedRoute>
+        }
+      />
+            <Route
+        path="/tickets"
+        element={
+          <ProtectedRoute>
+            <Tickets />         
           </ProtectedRoute>
         }
       />
