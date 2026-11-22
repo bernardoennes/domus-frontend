@@ -1,18 +1,17 @@
 import {
   Bell,
   CalendarCheck,
-  ChatCircleDots,
   House,
-  Package,
   Question,
+  Ticket,
 } from '@phosphor-icons/react'
 
 const iconRegistry = {
   House,
   CalendarCheck,
-  ChatCircleDots,
   Bell,
   Package,
+  Ticket,
 }
 
 export function resolvePhosphorIcon(iconName) {
