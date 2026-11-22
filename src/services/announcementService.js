@@ -1,53 +1,8 @@
-const STORAGE_VERSION = 1
-const STORAGE_PREFIX = 'condominio:announcements:v1:'
+import { readDatabase, updateDatabase } from '../lib/localDatabase.js'
+
 const ANNOUNCEMENT_BODY_LIMIT = 400
 const COMMENT_BODY_LIMIT = 200
 const ANNOUNCEMENT_IMAGE_LIMIT = 1_400_000
-
-function getStorageKey(organisationId) {
-  if (!organisationId) {
-    throw new Error('Não foi possível identificar o condomínio dos avisos.')
-  }
-
-  return `${STORAGE_PREFIX}${encodeURIComponent(String(organisationId))}`
-}
-
-function readAnnouncements(organisationId) {
-  const storageKey = getStorageKey(organisationId)
-
-  try {
-    const storedValue = window.localStorage.getItem(storageKey)
-
-    if (!storedValue) {
-      return []
-    }
-
-    const parsedValue = JSON.parse(storedValue)
-    if (parsedValue?.version !== STORAGE_VERSION || !Array.isArray(parsedValue.items)) {
-      throw new Error('O formato salvo dos avisos não é compatível com esta versão.')
-    }
-
-    return parsedValue.items
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      throw new Error('Os avisos salvos estão corrompidos e não puderam ser carregados.')
-    }
-    throw error
-  }
-}
-
-function writeAnnouncements(organisationId, items) {
-  const storageKey = getStorageKey(organisationId)
-
-  try {
-    window.localStorage.setItem(storageKey, JSON.stringify({
-      version: STORAGE_VERSION,
-      items,
-    }))
-  } catch {
-    throw new Error('Não foi possível salvar os avisos neste navegador.')
-  }
-}
 
 function createId() {
   if (window.crypto?.randomUUID) {
@@ -63,24 +18,34 @@ function assertAuthor(author, userId, contentLabel) {
   }
 }
 
-function updateAnnouncement(organisationId, announcementId, update) {
-  const announcements = readAnnouncements(organisationId)
-  const announcementIndex = announcements.findIndex((item) => item.id === announcementId)
-
-  if (announcementIndex < 0) {
-    throw new Error('Este aviso não foi encontrado.')
+function assertOrganisation(organisationId) {
+  if (!organisationId) {
+    throw new Error('Não foi possível identificar o condomínio dos avisos.')
   }
+}
 
-  const updatedAnnouncement = update(announcements[announcementIndex])
-  const nextAnnouncements = [...announcements]
-  nextAnnouncements[announcementIndex] = updatedAnnouncement
-  writeAnnouncements(organisationId, nextAnnouncements)
+function updateAnnouncement(organisationId, announcementId, update) {
+  assertOrganisation(organisationId)
 
-  return updatedAnnouncement
+  return updateDatabase((database) => {
+    const index = database.announcements.findIndex((item) => (
+      item.id === announcementId && String(item.organisationId) === String(organisationId)
+    ))
+
+    if (index < 0) {
+      throw new Error('Este aviso não foi encontrado.')
+    }
+
+    const announcement = update(database.announcements[index])
+    database.announcements[index] = announcement
+    return announcement
+  })
 }
 
 export async function fetchAnnouncements(organisationId) {
-  return readAnnouncements(organisationId)
+  assertOrganisation(organisationId)
+  return readDatabase().announcements
+    .filter((item) => String(item.organisationId) === String(organisationId))
     .sort((first, second) => (
       Number(second.pinned) - Number(first.pinned)
       || second.createdAt.localeCompare(first.createdAt)
@@ -88,6 +53,7 @@ export async function fetchAnnouncements(organisationId) {
 }
 
 export async function createAnnouncement(organisationId, values) {
+  assertOrganisation(organisationId)
   const title = String(values.title ?? '').trim()
   const body = String(values.body ?? '').trim()
 
@@ -106,7 +72,6 @@ export async function createAnnouncement(organisationId, values) {
     throw new Error('A imagem do aviso não é válida ou excede o tamanho permitido.')
   }
 
-  const announcements = readAnnouncements(organisationId)
   const announcement = {
     id: createId(),
     organisationId: String(organisationId),
@@ -120,8 +85,10 @@ export async function createAnnouncement(organisationId, values) {
     comments: [],
   }
 
-  writeAnnouncements(organisationId, [announcement, ...announcements])
-  return announcement
+  return updateDatabase((database) => {
+    database.announcements.unshift(announcement)
+    return announcement
+  })
 }
 
 export async function setAnnouncementPinned(organisationId, announcementId, pinned) {
@@ -165,17 +132,18 @@ export async function updateAnnouncementContent(organisationId, announcementId, 
 }
 
 export async function deleteAnnouncement(organisationId, announcementId, userId) {
-  const announcements = readAnnouncements(organisationId)
-  const announcement = announcements.find((item) => item.id === announcementId)
+  assertOrganisation(organisationId)
+  return updateDatabase((database) => {
+    const index = database.announcements.findIndex((item) => (
+      item.id === announcementId && String(item.organisationId) === String(organisationId)
+    ))
 
-  if (!announcement) {
-    throw new Error('Este aviso não foi encontrado.')
-  }
-  assertAuthor(announcement.author, userId, 'este aviso')
-  writeAnnouncements(
-    organisationId,
-    announcements.filter((item) => item.id !== announcementId),
-  )
+    if (index < 0) {
+      throw new Error('Este aviso não foi encontrado.')
+    }
+    assertAuthor(database.announcements[index].author, userId, 'este aviso')
+    database.announcements.splice(index, 1)
+  })
 }
 
 export async function addAnnouncementComment(organisationId, announcementId, values) {

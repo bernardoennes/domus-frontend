@@ -1,13 +1,20 @@
 const DATABASE_KEY = 'condominio:database'
 const SESSION_KEY = 'condominio:session'
-const DATABASE_VERSION = 1
-const TABLES = ['organisations', 'users', 'memberships', 'residents', 'employees', 'areas', 'reservations']
-
+const TABLES = [
+  'organisations',
+  'users',
+  'memberships',
+  'residents',
+  'employees',
+  'areas',
+  'reservations',
+  'announcements',
+  'tickets',
+]
 export const DEFAULT_ORGANISATION_ID = 1
 
 function createSeedDatabase() {
   return {
-    version: DATABASE_VERSION,
     sequences: {
       organisations: 1,
       users: 0,
@@ -24,6 +31,8 @@ function createSeedDatabase() {
     employees: [],
     areas: [],
     reservations: [],
+    announcements: [],
+    tickets: [],
   }
 }
 
@@ -58,8 +67,15 @@ export function readDatabase() {
     throw new Error('Os dados salvos estão corrompidos e não puderam ser carregados.')
   }
 
-  if (database?.version !== DATABASE_VERSION || TABLES.some((table) => !Array.isArray(database[table]))) {
-    throw new Error('O formato dos dados salvos não é compatível com esta versão.')
+  if (!database || typeof database !== 'object' || Array.isArray(database)) {
+    throw new Error('O formato dos dados salvos é inválido.')
+  }
+
+  if (!('announcements' in database)) database.announcements = []
+  if (!('tickets' in database)) database.tickets = []
+
+  if (TABLES.some((table) => !Array.isArray(database[table]))) {
+    throw new Error('O formato dos dados salvos é inválido.')
   }
 
   return database

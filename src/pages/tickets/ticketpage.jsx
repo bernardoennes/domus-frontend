@@ -4,18 +4,22 @@ import { MagnifyingGlass, Plus, PencilSimple, Paperclip } from '@phosphor-icons/
 import Header from '../../components/Header/Header.jsx'
 import Sidebar from '../../components/Sidebar/Sidebar.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { supabase } from '../../lib/supabase'
+import { createTicket, fetchTickets, updateTicketStatus } from '../../services/ticketService.js'
 
 export default function Tickets() {
   const navigate = useNavigate()
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
   const { user, membership } = useAuth()
+  const organisationId = membership?.organisation_id
 
   const userName = user?.name ?? 'Morador'
   const accessType = membership?.access_type ?? 'Não definido'
 
-  const [tickets, setTickets] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [ticketState, setTicketState] = useState({ organisationId: null, tickets: [], loading: true })
+  const currentOrganisationId = String(organisationId ?? '')
+  const isCurrentOrganisation = ticketState.organisationId === currentOrganisationId
+  const tickets = isCurrentOrganisation ? ticketState.tickets : []
+  const loading = Boolean(organisationId) && (!isCurrentOrganisation || ticketState.loading)
   const [statusFiltro, setStatusFiltro] = useState('Todos')
   const [periodoFiltro, setPeriodoFiltro] = useState('30')
   const [termoBusca, setTermoBusca] = useState('')
@@ -29,28 +33,35 @@ export default function Tickets() {
   const [novoLocal, setNovoLocal] = useState('')
   const [novaDescricao, setNovaDescricao] = useState('')
 
-  const fetchTickets = async () => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('tickets')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      console.error('Erro ao buscar chamados:', error.message)
-    } else {
-      setTickets(data || [])
-    }
-    setLoading(false)
-  }
-
   useEffect(() => {
-    fetchTickets()
-  }, [])
+    let isMounted = true
+
+    if (!organisationId) {
+      return undefined
+    }
+
+    fetchTickets(organisationId)
+      .then((data) => {
+        if (isMounted) {
+          setTicketState({ organisationId: String(organisationId), tickets: data, loading: false })
+        }
+      })
+      .catch((error) => {
+        console.error('Erro ao buscar chamados:', error.message)
+        if (isMounted) {
+          setTicketState({ organisationId: String(organisationId), tickets: [], loading: false })
+          alert(`Erro ao buscar chamados: ${error.message}`)
+        }
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [organisationId])
 
   const handleCreateTicket = async (e) => {
     e.preventDefault()
-    if (!novoAssunto.trim()) return
+    if (!novoAssunto.trim() || !organisationId) return
 
     const generatedCode = `#CH-${Math.floor(1000 + Math.random() * 9000)}`
 
@@ -64,37 +75,37 @@ export default function Tickets() {
       descricao: novaDescricao
     }
 
-    const { data, error } = await supabase
-      .from('tickets')
-      .insert([newTicketData])
-      .select()
-
-    if (error) {
-      alert(`Erro ao criar chamado: ${error.message}`)
-    } else if (data) {
-      setTickets([data[0], ...tickets])
+    try {
+      const ticket = await createTicket(organisationId, newTicketData)
+      setTicketState((current) => ({
+        organisationId: String(organisationId),
+        tickets: [ticket, ...(current.organisationId === String(organisationId) ? current.tickets : [])],
+        loading: false,
+      }))
       setIsNewTicketModalOpen(false)
       setNovoAssunto('')
       setNovoLocal('')
       setNovaDescricao('')
+    } catch (error) {
+      alert(`Erro ao criar chamado: ${error.message}`)
     }
   }
 
   const handleUpdateStatus = async (newStatus) => {
-    if (!selectedTicket) return
+    if (!selectedTicket || !organisationId) return
 
-    const { error } = await supabase
-      .from('tickets')
-      .update({ situacao: newStatus })
-      .eq('id', selectedTicket.id)
-
-    if (error) {
-      alert(`Erro ao atualizar status: ${error.message}`)
-    } else {
-      setTickets(prev =>
-        prev.map(t => (t.id === selectedTicket.id ? { ...t, situacao: newStatus } : t))
-      )
+    try {
+      const updatedTicket = await updateTicketStatus(organisationId, selectedTicket.id, newStatus)
+      setTicketState((current) => ({
+        organisationId: String(organisationId),
+        tickets: (current.organisationId === String(organisationId) ? current.tickets : []).map((ticket) => (
+          ticket.id === updatedTicket.id ? updatedTicket : ticket
+        )),
+        loading: false,
+      }))
       setSelectedTicket(null)
+    } catch (error) {
+      alert(`Erro ao atualizar status: ${error.message}`)
     }
   }
 
