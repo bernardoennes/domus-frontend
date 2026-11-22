@@ -135,7 +135,7 @@ html[data-theme] {
 
 body {
   margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Poppins', sans-serif;
   background: var(--app-bg);
   color: var(--text-primary);
   transition: background-color 220ms ease, color 220ms ease;

@@ -10,7 +10,6 @@ const iconRegistry = {
   House,
   CalendarCheck,
   Bell,
-  Package,
   Ticket,
 }
 

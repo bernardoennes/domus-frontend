@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { MagnifyingGlass, Plus, PencilSimple, Paperclip } from '@phosphor-icons/react'
 import Header from '../../components/Header/Header.jsx'
+import PageSubheader from '../../components/PageSubheader/PageSubheader.jsx'
+import Select from '../../components/Select/Select.jsx'
 import Sidebar from '../../components/Sidebar/Sidebar.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { createTicket, fetchTickets, updateTicketStatus } from '../../services/ticketService.js'
+import styles from './ticketpage.module.css'
 
 export default function Tickets() {
-  const navigate = useNavigate()
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
   const { user, membership } = useAuth()
   const organisationId = membership?.organisation_id
@@ -117,7 +118,7 @@ export default function Tickets() {
   })
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: 'var(--app-bg)', color: 'var(--text-primary)' }}>
+    <div className={styles.pageShell}>
       <Header
         userName={userName}
         accessType={accessType}
@@ -125,7 +126,15 @@ export default function Tickets() {
         onNavigationToggle={setIsSidebarExpanded}
       />
 
-      <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
+      <div className={styles.pageBody}>
+        <button
+          type="button"
+          className={`${styles.pageOverlay}${isSidebarExpanded ? ` ${styles.overlayVisible}` : ''}`}
+          aria-label="Fechar navegação"
+          aria-hidden={!isSidebarExpanded}
+          tabIndex={isSidebarExpanded ? 0 : -1}
+          onClick={() => setIsSidebarExpanded(false)}
+        />
         <Sidebar
           expanded={isSidebarExpanded}
           onExpand={() => setIsSidebarExpanded(true)}
@@ -135,307 +144,169 @@ export default function Tickets() {
           accessType={accessType}
         />
 
-        <main style={{
-          flex: 1,
-          padding: '24px 40px',
-          marginLeft: isSidebarExpanded ? '240px' : '80px',
-          transition: 'margin-left 0.3s ease'
-        }}>
+        <main className={styles.content}>
           
-          <button
-            onClick={() => navigate('/')}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              fontSize: '13px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: 0,
-              marginBottom: '12px'
-            }}
-          >
-            &larr; Voltar à visão geral
-          </button>
+          <PageSubheader
+            className={styles.subheader}
+            title="Chamados"
+            subtitle="Consulte e gerencie chamados abertos pelo responsável ou moradores."
+            backLabel="Voltar para Home"
+          />
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-            <div>
-              <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 4px 0', color: 'var(--text-primary)' }}>Chamados</h1>
-              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '14px' }}>Consulte e gerencie chamados abertos pelo responsável ou moradores.</p>
-            </div>
-
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              {showSearchInput ? (
-                <input
-                  type="text"
-                  placeholder="Buscar por ID ou assunto..."
-                  value={termoBusca}
-                  onChange={(e) => setTermoBusca(e.target.value)}
-                  autoFocus
-                  onBlur={() => !termoBusca && setShowSearchInput(false)}
-                  style={{
-                    height: 'var(--control-height, 40px)',
-                    padding: '0 var(--control-padding-x, 12px)',
-                    borderRadius: 'var(--control-radius, 8px)',
-                    border: '1px solid var(--input-border)',
-                    backgroundColor: 'var(--input-bg)',
-                    color: 'var(--text-primary)',
-                    fontSize: 'var(--control-font-size, 13px)'
-                  }}
-                />
-              ) : (
-                <button
-                  onClick={() => setShowSearchInput(true)}
-                  style={{
-                    height: 'var(--control-height, 40px)',
-                    padding: '0 16px',
-                    borderRadius: 'var(--control-radius, 8px)',
-                    border: '1px solid var(--border-strong)',
-                    backgroundColor: 'var(--surface-raised)',
-                    color: 'var(--text-primary)',
-                    fontSize: '13px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <MagnifyingGlass size={16} weight="bold" />
-                  Pesquisar
-                </button>
-              )}
-
-              <button
-                onClick={() => setIsNewTicketModalOpen(true)}
-                style={{
-                  height: 'var(--control-height, 40px)',
-                  padding: '0 16px',
-                  borderRadius: 'var(--control-radius, 8px)',
-                  border: 'none',
-                  backgroundColor: 'var(--primary-action-bg)',
-                  color: 'var(--primary-action-text)',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <Plus size={16} weight="bold" />
-                Novo Chamado
-              </button>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-            <select
-              value={statusFiltro}
-              onChange={(e) => setStatusFiltro(e.target.value)}
-              style={{
-                height: '36px',
-                padding: '0 12px',
-                borderRadius: 'var(--control-radius, 8px)',
-                border: '1px solid var(--border-color)',
-                backgroundColor: 'var(--surface)',
-                color: 'var(--text-primary)',
-                fontSize: '13px'
-              }}
-            >
-              <option value="Todos">Status: Todos</option>
-              <option value="Em aberto">Em aberto</option>
-              <option value="Em andamento">Em andamento</option>
-              <option value="Resolvido">Resolvido</option>
-            </select>
-
-            <select
-              value={periodoFiltro}
-              onChange={(e) => setPeriodoFiltro(e.target.value)}
-              style={{
-                height: '36px',
-                padding: '0 12px',
-                borderRadius: 'var(--control-radius, 8px)',
-                border: '1px solid var(--border-color)',
-                backgroundColor: 'var(--surface)',
-                color: 'var(--text-primary)',
-                fontSize: '13px'
-              }}
-            >
-              <option value="30">Período: Últimos 30 dias</option>
-              <option value="60">Período: Últimos 60 dias</option>
-              <option value="all">Período: Todo o histórico</option>
-            </select>
-          </div>
-
-          <div style={{
-            backgroundColor: 'var(--surface)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '8px',
-            overflow: 'hidden'
-          }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-muted)', fontSize: '11px', fontWeight: 'bold' }}>
-                  <th style={{ padding: '14px 16px' }}>ID</th>
-                  <th style={{ padding: '14px 16px' }}>ASSUNTO</th>
-                  <th style={{ padding: '14px 16px' }}>SOLICITAÇÃO</th>
-                  <th style={{ padding: '14px 16px' }}>CATEGORIA</th>
-                  <th style={{ padding: '14px 16px' }}>SITUAÇÃO</th>
-                  <th style={{ padding: '14px 16px' }}>DATA DE ABERTURA</th>
-                  <th style={{ padding: '14px 16px', textAlign: 'right' }}>AÇÕES</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan="7" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      Carregando chamados...
-                    </td>
-                  </tr>
-                ) : ticketsFiltrados.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      Nenhum chamado encontrado.
-                    </td>
-                  </tr>
+          <div className={styles.contentBody}>
+            <div className={styles.heading}>
+              <div className={styles.headingActions}>
+                {showSearchInput ? (
+                  <input
+                    type="text"
+                    placeholder="Buscar por ID ou assunto..."
+                    value={termoBusca}
+                    onChange={(e) => setTermoBusca(e.target.value)}
+                    autoFocus
+                    onBlur={() => !termoBusca && setShowSearchInput(false)}
+                    className={styles.searchInput}
+                  />
                 ) : (
-                  ticketsFiltrados.map((ticket) => (
-                    <tr key={ticket.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <td style={{ padding: '14px 16px', fontWeight: 'bold' }}>{ticket.code}</td>
-                      <td style={{ padding: '14px 16px' }}>{ticket.assunto}</td>
-                      <td style={{ padding: '14px 16px' }}>{ticket.solicitacao}</td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <span style={{
-                          padding: '3px 10px',
-                          borderRadius: '12px',
-                          fontSize: '11px',
-                          backgroundColor: 'var(--surface-muted)',
-                          color: 'var(--text-secondary)',
-                          border: '1px solid var(--border-color)'
-                        }}>
-                          {ticket.categoria}
-                        </span>
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        <span style={{
-                          padding: '3px 10px',
-                          borderRadius: '12px',
-                          fontSize: '11px',
-                          fontWeight: '600',
-                          backgroundColor: ticket.situacao === 'Em aberto' ? 'var(--danger-bg)' : ticket.situacao === 'Em andamento' ? 'var(--accent-soft-bg)' : 'var(--accent-bg)',
-                          color: ticket.situacao === 'Em aberto' ? 'var(--danger-text)' : ticket.situacao === 'Em andamento' ? 'var(--accent-soft-text)' : 'var(--success-text)',
-                          border: `1px solid ${ticket.situacao === 'Em aberto' ? 'var(--danger-border)' : ticket.situacao === 'Em andamento' ? 'var(--border-color)' : 'var(--success-border)'}`
-                        }}>
-                          {ticket.situacao}
-                        </span>
-                      </td>
-                      <td style={{ padding: '14px 16px' }}>
-                        {new Date(ticket.created_at).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                        <button
-                          onClick={() => setSelectedTicket(ticket)}
-                          title="Editar/Atender Chamado"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: 'var(--text-secondary)',
-                            padding: '4px',
-                            borderRadius: '4px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <PencilSimple size={18} weight="regular" />
-                        </button>
+                  <button
+                    onClick={() => setShowSearchInput(true)}
+                    className={styles.searchButton}
+                  >
+                    <MagnifyingGlass size={16} weight="bold" />
+                    Pesquisar
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setIsNewTicketModalOpen(true)}
+                  className={styles.newTicketButton}
+                >
+                  <Plus size={16} weight="bold" />
+                  Novo Chamado
+                </button>
+              </div>
+              <div className={styles.filters}>
+                <Select
+                  className={styles.statusFilter}
+                  ariaLabel="Filtrar por status"
+                  value={statusFiltro}
+                  onChange={setStatusFiltro}
+                  options={[
+                    { value: 'Todos', label: 'Status: Todos' },
+                    ...['Em aberto', 'Em andamento', 'Resolvido'].map((value) => ({ value, label: value })),
+                  ]}
+                />
+                <Select
+                  className={styles.periodFilter}
+                  ariaLabel="Filtrar por período"
+                  value={periodoFiltro}
+                  onChange={setPeriodoFiltro}
+                  options={[
+                    { value: '30', label: 'Período: Últimos 30 dias' },
+                    { value: '60', label: 'Período: Últimos 60 dias' },
+                    { value: 'all', label: 'Período: Todo o histórico' },
+                  ]}
+                />
+              </div>
+            </div>
+
+            <div className={styles.table}>
+              <table className={styles.tableElement}>
+                <thead>
+                  <tr className={styles.tableHeading}>
+                    <th className={styles.tableCell}>ID</th>
+                    <th className={styles.tableCell}>ASSUNTO</th>
+                    <th className={styles.tableCell}>SOLICITAÇÃO</th>
+                    <th className={styles.tableCell}>CATEGORIA</th>
+                    <th className={styles.tableCell}>SITUAÇÃO</th>
+                    <th className={styles.tableCell}>DATA DE ABERTURA</th>
+                    <th className={styles.tableActionCell}>AÇÕES</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan="7" className={styles.tableEmpty}>
+                        Carregando chamados...
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : ticketsFiltrados.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className={styles.tableEmpty}>
+                        Nenhum chamado encontrado.
+                      </td>
+                    </tr>
+                  ) : (
+                    ticketsFiltrados.map((ticket) => (
+                      <tr key={ticket.id} className={styles.tableRow}>
+                        <td className={styles.ticketCode}>{ticket.code}</td>
+                        <td className={styles.tableCell}>{ticket.assunto}</td>
+                        <td className={styles.tableCell}>{ticket.solicitacao}</td>
+                        <td className={styles.tableCell}>
+                          <span className={styles.categoryBadge}>
+                            {ticket.categoria}
+                          </span>
+                        </td>
+                        <td className={styles.tableCell}>
+                          <span className={`${styles.statusBadge} ${ticket.situacao === 'Em aberto'
+                            ? styles.statusOpen
+                            : ticket.situacao === 'Em andamento' ? styles.statusInProgress : styles.statusResolved}`}>
+                            {ticket.situacao}
+                          </span>
+                        </td>
+                        <td className={styles.tableCell}>
+                          {new Date(ticket.created_at).toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className={styles.tableActionCell}>
+                          <button
+                            onClick={() => setSelectedTicket(ticket)}
+                            title="Editar/Atender Chamado"
+                            className={styles.editButton}
+                          >
+                            <PencilSimple size={18} weight="regular" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-
         </main>
       </div>
 
       {isNewTicketModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'var(--overlay-bg)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--surface)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '12px',
-            width: '100%',
-            maxWidth: '680px',
-            maxHeight: '90vh',
-            overflowY: 'auto',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
-          }}>
-            <div style={{
-              padding: '20px 24px',
-              borderBottom: '1px solid var(--border-color)',
-              display: 'flex',
-              justify: 'space-between',
-              alignItems: 'flex-start',
-              gap: '16px'
-            }}>
-              <div style={{ flex: 1 }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 4px 0', color: 'var(--text-primary)', lineHeight: '1.2' }}>
+        <div className={styles.overlayLayout}>
+          <div className={`${styles.dialog} ${styles.newTicketDialog}`}>
+            <div className={styles.newDialogHeader}>
+              <div className={styles.dialogHeaderText}>
+                <h2 className={styles.newDialogTitle}>
                   Novo Chamado
                 </h2>
-                <p style={{ margin: 0, padding: 0, fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                <p className={styles.newDialogSubtitle}>
                   Preencha os dados abaixo para registrar uma manutenção ou solicitação no condomínio.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setIsNewTicketModalOpen(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '22px',
-                  lineHeight: '1',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  padding: '2px 4px',
-                  marginTop: '-2px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className={styles.newDialogClose}
               >
                 &times;
               </button>
             </div>
 
-            <form onSubmit={handleCreateTicket} style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 'bold', margin: 0, color: 'var(--text-primary)' }}>
+            <form onSubmit={handleCreateTicket} className={styles.ticketForm}>
+              <div className={styles.formHeader}>
+                <h3 className={styles.formTitle}>
                   Dados do chamado
                 </h3>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>* Campos obrigatórios</span>
+                <span className={styles.formHint}>* Campos obrigatórios</span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className={styles.formFields}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-primary)' }}>
+                  <label className={styles.fieldLabel}>
                     Assunto *
                   </label>
                   <input
@@ -444,47 +315,26 @@ export default function Tickets() {
                     placeholder="Ex.: Vazamento na garagem do subsolo 1"
                     value={novoAssunto}
                     onChange={(e) => setNovoAssunto(e.target.value)}
-                    style={{
-                      width: '100%',
-                      height: 'var(--control-height, 40px)',
-                      padding: '0 var(--control-padding-x, 12px)',
-                      borderRadius: 'var(--control-radius, 8px)',
-                      border: '1px solid var(--input-border)',
-                      backgroundColor: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: 'var(--control-font-size, 13px)'
-                    }}
+                    className={styles.textInput}
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className={styles.fieldGrid}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-primary)' }}>
+                    <span className={styles.fieldLabel}>
                       Categoria *
-                    </label>
-                    <select
+                    </span>
+                    <Select
+                      ariaLabel="Categoria"
                       value={novaCategoria}
-                      onChange={(e) => setNovaCategoria(e.target.value)}
-                      style={{
-                        width: '100%',
-                        height: 'var(--control-height, 40px)',
-                        padding: '0 var(--control-padding-x, 12px)',
-                        borderRadius: 'var(--control-radius, 8px)',
-                        border: '1px solid var(--input-border)',
-                        backgroundColor: 'var(--input-bg)',
-                        color: 'var(--text-primary)',
-                        fontSize: 'var(--control-font-size, 13px)'
-                      }}
-                    >
-                      <option value="Manutenção Predial">Manutenção Predial</option>
-                      <option value="Solicitação">Solicitação</option>
-                      <option value="Limpeza">Limpeza</option>
-                      <option value="Barulho">Barulho</option>
-                    </select>
+                      onChange={setNovaCategoria}
+                      options={['Manutenção Predial', 'Solicitação', 'Limpeza', 'Barulho']
+                        .map((value) => ({ value, label: value }))}
+                    />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-primary)' }}>
+                    <label className={styles.fieldLabel}>
                       Local da ocorrência *
                     </label>
                     <input
@@ -493,22 +343,13 @@ export default function Tickets() {
                       placeholder="Ex.: Bloco A, 3º andar, corredor"
                       value={novoLocal}
                       onChange={(e) => setNovoLocal(e.target.value)}
-                      style={{
-                        width: '100%',
-                        height: 'var(--control-height, 40px)',
-                        padding: '0 var(--control-padding-x, 12px)',
-                        borderRadius: 'var(--control-radius, 8px)',
-                        border: '1px solid var(--input-border)',
-                        backgroundColor: 'var(--input-bg)',
-                        color: 'var(--text-primary)',
-                        fontSize: 'var(--control-font-size, 13px)'
-                      }}
+                      className={styles.textInput}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-primary)' }}>
+                  <label className={styles.fieldLabel}>
                     Descrição *
                   </label>
                   <textarea
@@ -517,57 +358,29 @@ export default function Tickets() {
                     placeholder="Descreva o problema ou a solicitação, quando começou e outros detalhes que possam ajudar no atendimento."
                     value={novaDescricao}
                     onChange={(e) => setNovaDescricao(e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '8px var(--control-padding-x, 12px)',
-                      borderRadius: 'var(--control-radius, 8px)',
-                      border: '1px solid var(--input-border)',
-                      backgroundColor: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: 'var(--control-font-size, 13px)',
-                      resize: 'vertical'
-                    }}
+                    className={styles.textArea}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--text-primary)' }}>
+                  <label className={styles.fieldLabel}>
                     Anexos (opcional)
                   </label>
-                  <div style={{
-                    border: '1px dashed var(--border-strong)',
-                    borderRadius: 'var(--control-radius, 8px)',
-                    padding: '14px 16px',
-                    backgroundColor: 'var(--surface-inset)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '12px'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                      <Paperclip size={20} weight="regular" style={{ color: 'var(--text-muted)' }} />
+                  <div className={`${styles.dialogOverlay} ${styles.attachments}`}>
+                    <div className={styles.attachmentsContent}>
+                      <Paperclip size={20} weight="regular" className={styles.attachmentIcon} />
                       <div>
-                        <strong style={{ display: 'block', fontSize: '12px', color: 'var(--text-primary)', fontWeight: '500' }}>
+                        <strong className={styles.attachmentTitle}>
                           Arraste arquivos para cá ou selecione no seu computador
                         </strong>
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        <span className={styles.formHint}>
                           JPG, PNG ou PDF. Até 5 arquivos de 10 MB cada.
                         </span>
                       </div>
                     </div>
                     <button
                       type="button"
-                      style={{
-                        padding: '8px 14px',
-                        borderRadius: 'var(--control-radius, 8px)',
-                        border: '1px solid var(--border-color)',
-                        backgroundColor: 'var(--surface-raised)',
-                        color: 'var(--text-primary)',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap'
-                      }}
+                      className={styles.attachmentButton}
                     >
                       Selecionar arquivos
                     </button>
@@ -575,52 +388,23 @@ export default function Tickets() {
                 </div>
               </div>
 
-              <div style={{
-                marginTop: '24px',
-                paddingTop: '16px',
-                borderTop: '1px solid var(--border-color)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '16px',
-                flexWrap: 'wrap'
-              }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', flex: '1 1 200px' }}>
+              <div className={styles.formFooter}>
+                <span className={styles.formFooterHint}>
                   Após o envio, acompanhe o atendimento na lista de chamados.
                 </span>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                <div className={styles.formButtons}>
                   <button
                     type="button"
                     onClick={() => setIsNewTicketModalOpen(false)}
-                    style={{
-                      height: 'var(--control-height, 40px)',
-                      padding: '0 20px',
-                      borderRadius: 'var(--control-radius, 8px)',
-                      border: '1px solid var(--border-color)',
-                      backgroundColor: 'transparent',
-                      color: 'var(--text-primary)',
-                      fontSize: '13px',
-                      fontWeight: '500',
-                      cursor: 'pointer'
-                    }}
+                    className={styles.cancelButton}
                   >
                     Cancelar
                   </button>
 
                   <button
                     type="submit"
-                    style={{
-                      height: 'var(--control-height, 40px)',
-                      padding: '0 20px',
-                      borderRadius: 'var(--control-radius, 8px)',
-                      border: 'none',
-                      backgroundColor: 'var(--primary-action-bg)',
-                      color: 'var(--primary-action-text)',
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      cursor: 'pointer'
-                    }}
+                    className={styles.submitButton}
                   >
                     Enviar chamado
                   </button>
@@ -633,110 +417,51 @@ export default function Tickets() {
       )}
 
       {selectedTicket && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'var(--overlay-bg)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '20px'
-        }}>
-          <div style={{
-            backgroundColor: 'var(--surface-raised)',
-            border: '1px solid var(--border-strong)',
-            padding: '24px',
-            borderRadius: '12px',
-            width: '100%',
-            maxWidth: '480px',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', gap: '12px' }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: 'var(--text-primary)', lineHeight: '1.2' }}>
+        <div className={`${styles.dialogOverlay} ${styles.overlayLayout}`}>
+          <div className={`${styles.dialog} ${styles.ticketDetailsDialog}`}>
+            <div className={styles.detailsHeader}>
+              <h2 className={styles.detailsTitle}>
                 Gerenciar Chamado {selectedTicket.code}
               </h2>
               <button
                 onClick={() => setSelectedTicket(null)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '22px',
-                  lineHeight: '1',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  padding: '2px 4px',
-                  marginTop: '-2px'
-                }}
+                className={styles.detailsClose}
               >
                 &times;
               </button>
             </div>
 
-            <p style={{ fontSize: '13px', margin: '4px 0', color: 'var(--text-primary)' }}>
+            <p className={styles.detailsLine}>
               <strong>Assunto:</strong> {selectedTicket.assunto}
             </p>
-            <p style={{ fontSize: '13px', margin: '4px 0', color: 'var(--text-primary)' }}>
+            <p className={styles.detailsLine}>
               <strong>Solicitação:</strong> {selectedTicket.solicitacao}
             </p>
-            <p style={{ fontSize: '13px', margin: '4px 0 12px 0', color: 'var(--text-primary)' }}>
+            <p className={styles.detailsCategory}>
               <strong>Categoria:</strong> {selectedTicket.categoria}
             </p>
 
-            <div style={{ backgroundColor: 'var(--surface-inset)', padding: '12px', borderRadius: '8px', fontSize: '13px', marginBottom: '16px', border: '1px solid var(--border-color)' }}>
-              <strong style={{ color: 'var(--text-primary)' }}>Descrição:</strong>
-              <p style={{ margin: '4px 0 0 0', color: 'var(--text-secondary)' }}>{selectedTicket.descricao}</p>
+            <div className={styles.descriptionBox}>
+              <strong className={styles.descriptionTitle}>Descrição:</strong>
+              <p className={styles.descriptionText}>{selectedTicket.descricao}</p>
             </div>
 
-            <label style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block' }}>
+            <div className={styles.statusLabel}>
               Alterar Situação:
-              <select
+              <Select
+                className={styles.statusSelect}
+                ariaLabel="Alterar situação"
                 value={selectedTicket.situacao}
-                onChange={(e) => handleUpdateStatus(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '40px',
-                  padding: '0 36px 0 12px',
-                  marginTop: '6px',
-                  borderRadius: 'var(--control-radius, 8px)',
-                  border: '1px solid var(--input-border)',
-                  backgroundColor: 'var(--input-bg)',
-                  color: 'var(--text-primary)',
-                  fontSize: '13px',
-                  fontWeight: '600',
-                  appearance: 'none',
-                  WebkitAppearance: 'none',
-                  MozAppearance: 'none',
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 256 256'%3E%3Cpath fill='%23718078' d='M213.66 101.66l-80 80a8 8 0 0 1-11.32 0l-80-80a8 8 0 0 1 11.32-11.32L128 164.69l74.34-74.35a8 8 0 0 1 11.32 11.32Z'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 12px center',
-                  backgroundSize: '16px',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="Em aberto">Em aberto</option>
-                <option value="Em andamento">Em andamento</option>
-                <option value="Resolvido">Resolvido</option>
-              </select>
-            </label>
+                onChange={handleUpdateStatus}
+                options={['Em aberto', 'Em andamento', 'Resolvido']
+                  .map((value) => ({ value, label: value }))}
+              />
+            </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+            <div className={styles.detailsActions}>
               <button
                 onClick={() => setSelectedTicket(null)}
-                style={{
-                  height: '38px',
-                  padding: '0 20px',
-                  borderRadius: 'var(--control-radius, 8px)',
-                  border: '1px solid var(--border-color)',
-                  backgroundColor: 'transparent',
-                  color: 'var(--text-primary)',
-                  fontSize: '13px',
-                  fontWeight: '500',
-                  cursor: 'pointer'
-                }}
+                className={styles.detailsCloseButton}
               >
                 Fechar
               </button>
