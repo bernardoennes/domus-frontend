@@ -1,10 +1,12 @@
 .authCard {
   width: min(480px, 100%);
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: 16px;
   padding: 24px;
   box-shadow: 0 24px 44px rgba(0, 0, 0, 0.35);
+  animation: riseIn 600ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
 
 .authCard h1 {
@@ -83,7 +85,8 @@
   color: var(--accent-soft-text);
   font-size: 14px;
   cursor: pointer;
-  padding: 6px 0 0;
+  min-height: 40px;
+  padding: 6px 0;
 }
 
 .linkButton span {
@@ -100,8 +103,34 @@
   color: var(--danger-text);
 }
 
+@keyframes riseIn {
+  from {
+    opacity: 0.15;
+    transform: translateY(28px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 640px) {
   .authCard {
     padding: 18px;
+  }
+
+  .authCard h1 {
+    font-size: clamp(24px, 7vw, 30px);
+  }
+
+  .form input {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .authCard {
+    animation: none;
   }
 }

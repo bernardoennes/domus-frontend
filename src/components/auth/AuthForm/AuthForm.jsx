@@ -242,7 +242,7 @@ export default function AuthForm({ mode = 'login' }) {
   const displayError = !isFirstAccess ? formError || error : null
 
   return (
-    <section className={styles.authCard}>
+    <section key={mode} className={styles.authCard}>
       <h1>{isAdminRegistration ? 'Cadastrar administrador' : isFirstAccess ? 'Primeiro acesso' : 'Login'}</h1>
       <p>
         {isAdminRegistration
