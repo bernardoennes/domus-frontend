@@ -7,7 +7,8 @@ import styles from './WeeklyCalendar.module.css'
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
 
 export default function WeeklyCalendar({
-  weekDates,
+  dates,
+  isMobile,
   todayKey,
   bookingGroupsByDate,
   selectedSlot,
@@ -26,14 +27,14 @@ export default function WeeklyCalendar({
   }, [])
 
   return (
-    <section className={styles.calendarPanel} aria-label="Agenda semanal">
+    <section className={styles.calendarPanel} aria-label={isMobile ? 'Agenda de três dias' : 'Agenda semanal'}>
       <div className={styles.calendarViewport} ref={calendarViewportRef}>
         <div className={styles.calendarCanvas}>
           <div className={styles.weekHeader}>
             <div className={styles.timeHeader} aria-hidden="true">
               <CalendarBlank size={16} />
             </div>
-            {weekDates.map((date) => {
+            {dates.map((date) => {
               const dateKey = getDateKey(date)
 
               return (
@@ -56,7 +57,7 @@ export default function WeeklyCalendar({
                 <span key={hour}>{`${String(hour).padStart(2, '0')}:00`}</span>
               ))}
             </div>
-            {weekDates.map((date) => (
+            {dates.map((date) => (
               <DayColumn
                 key={getDateKey(date)}
                 date={date}

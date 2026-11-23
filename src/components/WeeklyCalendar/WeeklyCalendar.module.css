@@ -1,5 +1,6 @@
 .calendarPanel {
   display: flex;
+  flex-direction: column;
   min-height: 0;
   min-width: 0;
   overflow: hidden;
@@ -108,7 +109,12 @@
 }
 
 @media (max-width: 700px) {
-  .calendarViewport {
-    min-height: 0;
+  .calendarCanvas {
+    min-width: 0;
+  }
+
+  .weekHeader,
+  .calendarBody {
+    grid-template-columns: 42px repeat(3, minmax(0, 1fr));
   }
 }

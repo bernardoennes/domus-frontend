@@ -67,10 +67,14 @@
   line-height: 1.1;
 }
 
+.carouselNavigation {
+  display: none;
+}
+
 .dashboardGrid {
   display: grid;
   flex: 1 1 auto;
-  min-height: 520px;
+  min-height: 460px;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   grid-template-areas: 'notices calendar occurrences';
@@ -289,18 +293,80 @@
   }
 
   .dashboardGrid {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto;
-    grid-template-areas:
-      'notices'
-      'calendar'
-      'occurrences';
+    flex: 1 1 0;
+    min-height: 220px;
+    grid-auto-flow: column;
+    grid-auto-columns: 100%;
+    grid-template-columns: none;
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: none;
     gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+    scrollbar-width: thin;
+  }
+
+  .carouselNavigation {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .carouselNavigation button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 40px;
+    overflow: hidden;
+    padding: 0 6px;
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .carouselNavigation button[aria-pressed='true'] {
+    border-color: var(--selection-border);
+    background: var(--selection-bg);
+    color: var(--accent-soft-text);
+  }
+
+  .carouselNavigation button:focus-visible {
+    outline: 2px solid var(--focus-color);
+    outline-offset: 2px;
+  }
+
+  .noticesPanel,
+  .calendarGridItem,
+  .occurrencesPanel {
+    grid-area: auto;
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    scroll-snap-align: start;
   }
 
   .dashboardPanel {
-    min-height: 210px;
     padding: 14px;
+  }
+
+  .dashboardPanel:hover {
+    transform: none;
+  }
+
+  .noticesPanel .panelHeading,
+  .noticePreview,
+  .viewAllNotices {
+    flex-shrink: 0;
   }
 
   .implementationState {
@@ -346,6 +412,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .dashboardGrid {
+    scroll-behavior: auto;
+  }
+
   .dashboardPanel {
     transition: none;
   }

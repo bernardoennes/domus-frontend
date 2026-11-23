@@ -23,6 +23,36 @@ export function getWeekDates(dateKey) {
   })
 }
 
+export function getCalendarDates(dateKey, mobileStartDate, isMobile) {
+  if (!isMobile) return getWeekDates(dateKey)
+
+  const start = parseDateKey(mobileStartDate)
+  const end = new Date(start)
+  end.setDate(start.getDate() + 2)
+  const firstDay = dateKey >= mobileStartDate && dateKey <= getDateKey(end)
+    ? start
+    : parseDateKey(dateKey)
+
+  return Array.from({ length: 3 }, (_, index) => {
+    const date = new Date(firstDay)
+    date.setDate(firstDay.getDate() + index)
+    return date
+  })
+}
+
+export function formatCalendarRange(dates) {
+  const first = dates[0]
+  const last = dates[dates.length - 1]
+  const differentYear = first.getFullYear() !== last.getFullYear()
+  const differentMonth = differentYear || first.getMonth() !== last.getMonth()
+  const start = formatDate(first, {
+    day: 'numeric',
+    ...(differentMonth ? { month: 'short' } : {}),
+    ...(differentYear ? { year: 'numeric' } : {}),
+  })
+  return `${start} – ${formatDate(last, { day: 'numeric', month: 'short' })} ${last.getFullYear()}`
+}
+
 export function formatDate(date, options) {
   return new Intl.DateTimeFormat('pt-BR', options).format(date)
 }

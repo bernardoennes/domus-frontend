@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import {
@@ -6,10 +6,11 @@ import {
   fetchCalendarReservations,
 } from '../services/calendarService.js'
 import {
+  formatCalendarRange,
   formatDate,
   getBookingMinutes,
+  getCalendarDates,
   getDateKey,
-  getWeekDates,
   parseDateKey,
 } from '../utils/calendarUtils.js'
 import {
@@ -21,6 +22,18 @@ import {
 import useCommonAreas from './useCommonAreas.js'
 import useReservationForm from './useReservationForm.js'
 
+const mobileQuery = '(max-width: 700px)'
+
+function subscribeToMobileViewport(callback) {
+  const mediaQuery = window.matchMedia(mobileQuery)
+  mediaQuery.addEventListener('change', callback)
+  return () => mediaQuery.removeEventListener('change', callback)
+}
+
+function isMobileViewport() {
+  return window.matchMedia(mobileQuery).matches
+}
+
 export default function useReservations({ organisationId, profile, isSyndic }) {
   const [searchParams] = useSearchParams()
   const shouldOpenNewReservation = searchParams.get('newReservation') === 'true'
@@ -29,6 +42,8 @@ export default function useReservations({ organisationId, profile, isSyndic }) {
     const dateParam = searchParams.get('date')
     return /^\d{4}-\d{2}-\d{2}$/.test(dateParam ?? '') ? dateParam : getDateKey(new Date())
   })
+  const [mobileStartDate, setMobileStartDate] = useState(selectedDate)
+  const isMobile = useSyncExternalStore(subscribeToMobileViewport, isMobileViewport, () => false)
   const [selectedSlot, setSelectedSlot] = useState(null)
   const [filterAreaId, setFilterAreaId] = useState('all')
   const [reservationState, setReservationState] = useState({
@@ -49,11 +64,16 @@ export default function useReservations({ organisationId, profile, isSyndic }) {
       : []
   ), [organisationId, reservationState])
   const todayKey = getDateKey(new Date())
-  const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate])
-  const weekLabel = `${formatDate(weekDates[0], { day: 'numeric' })} – ${formatDate(weekDates[6], {
-    day: 'numeric',
-    month: 'short',
-  })} ${weekDates[6].getFullYear()}`
+  const calendarDates = useMemo(
+    () => getCalendarDates(selectedDate, mobileStartDate, isMobile),
+    [selectedDate, mobileStartDate, isMobile],
+  )
+  const calendarLabel = isMobile
+    ? formatCalendarRange(calendarDates)
+    : `${formatDate(calendarDates[0], { day: 'numeric' })} – ${formatDate(calendarDates[6], {
+      day: 'numeric',
+      month: 'short',
+    })} ${calendarDates[6].getFullYear()}`
 
   const canManageBooking = (booking) => canUserManageBooking(booking, { isSyndic, profile })
   const sortManageableFirst = (items) => [...items].sort((first, second) => (
@@ -64,10 +84,10 @@ export default function useReservations({ organisationId, profile, isSyndic }) {
   const filteredBookings = useMemo(() => bookings.filter((booking) => (
     filterAreaId === 'all' || String(booking.areaId) === filterAreaId
   )), [bookings, filterAreaId])
-  const bookingGroupsByDate = useMemo(() => new Map(weekDates.map((date) => {
+  const bookingGroupsByDate = useMemo(() => new Map(calendarDates.map((date) => {
     const dateKey = getDateKey(date)
     return [dateKey, getBookingGroups(filteredBookings.filter((booking) => booking.date === dateKey))]
-  })), [filteredBookings, weekDates])
+  })), [filteredBookings, calendarDates])
   const selectedBookings = useMemo(() => selectedBookingIds
     .map((id) => bookings.find((booking) => String(booking.id) === String(id)))
     .filter(Boolean), [bookings, selectedBookingIds])
@@ -113,6 +133,15 @@ export default function useReservations({ organisationId, profile, isSyndic }) {
     }
   }, [organisationId, areas, commonAreas.error, commonAreas.isLoading, reservationRequestId])
 
+  const selectDate = (dateKey) => {
+    if (isMobile) {
+      const start = getDateKey(calendarDates[0])
+      const end = getDateKey(calendarDates[calendarDates.length - 1])
+      setMobileStartDate(dateKey >= start && dateKey <= end ? start : dateKey)
+    }
+    setSelectedDate(dateKey)
+  }
+
   const form = useReservationForm({
     organisationId,
     profile,
@@ -122,7 +151,7 @@ export default function useReservations({ organisationId, profile, isSyndic }) {
     isLoadingAreas: commonAreas.isLoading,
     bookings,
     selectedDate,
-    onDateChange: setSelectedDate,
+    onDateChange: selectDate,
     todayKey,
     canManageBooking,
     openOnMount: shouldOpenNewReservation,
@@ -142,13 +171,13 @@ export default function useReservations({ organisationId, profile, isSyndic }) {
   })
 
   const selectDay = (dateKey) => {
-    setSelectedDate(dateKey)
+    selectDate(dateKey)
     setSelectedSlot(null)
   }
 
-  const changeWeek = (offset) => {
-    const nextDate = parseDateKey(selectedDate)
-    nextDate.setDate(nextDate.getDate() + offset * 7)
+  const changePeriod = (offset) => {
+    const nextDate = isMobile ? new Date(calendarDates[0]) : parseDateKey(selectedDate)
+    nextDate.setDate(nextDate.getDate() + offset * (isMobile ? 3 : 7))
     selectDay(getDateKey(nextDate))
   }
 
@@ -157,7 +186,7 @@ export default function useReservations({ organisationId, profile, isSyndic }) {
     const intervalStart = hour * 60
     const intervalEnd = intervalStart + 60
 
-    setSelectedDate(dateKey)
+    selectDate(dateKey)
     setSelectedSlot({ dateKey, hour })
     showBookings(sortManageableFirst(filteredBookings.filter((booking) => (
       booking.date === dateKey
@@ -230,8 +259,9 @@ export default function useReservations({ organisationId, profile, isSyndic }) {
       retryReservations,
     },
     form,
-    weekDates,
-    weekLabel,
+    calendarDates,
+    calendarLabel,
+    isMobile,
     todayKey,
     filterAreaId,
     setFilterAreaId,
@@ -247,7 +277,7 @@ export default function useReservations({ organisationId, profile, isSyndic }) {
     setReservationToDelete,
     confirmDelete,
     selectDay,
-    changeWeek,
+    changePeriod,
     selectSlot,
     selectGroup,
   }

@@ -12,6 +12,7 @@ import {
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Header from '../../components/Header/Header.jsx'
 import PageSubheader from '../../components/PageSubheader/PageSubheader.jsx'
+import Select from '../../components/Select/Select.jsx'
 import Sidebar from '../../components/Sidebar/Sidebar.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import useAnnouncements from '../../hooks/useAnnouncements.js'
@@ -638,20 +639,20 @@ export default function AnnouncementsPage() {
                       placeholder="Buscar por título ou conteúdo"
                     />
                   </label>
-                  <label className={styles.filterField}>
-                    <span className={styles.visuallyHidden}>Filtrar avisos</span>
-                    <select
-                      value={filter}
-                      onChange={(event) => {
-                        setFilter(event.target.value)
-                        setVisibleCount(ANNOUNCEMENTS_PER_BATCH)
-                      }}
-                    >
-                      <option value="all">Todos os avisos</option>
-                      <option value="recent">Mais recentes</option>
-                      <option value="pinned">Fixados</option>
-                    </select>
-                  </label>
+                  <Select
+                    className={styles.filterField}
+                    ariaLabel="Filtrar avisos"
+                    value={filter}
+                    onChange={(value) => {
+                      setFilter(value)
+                      setVisibleCount(ANNOUNCEMENTS_PER_BATCH)
+                    }}
+                    options={[
+                      { value: 'all', label: 'Todos os avisos' },
+                      { value: 'recent', label: 'Mais recentes' },
+                      { value: 'pinned', label: 'Fixados' },
+                    ]}
+                  />
                   {canManage && (
                     <button
                       type="button"

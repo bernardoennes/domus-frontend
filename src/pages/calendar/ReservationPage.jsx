@@ -66,18 +66,20 @@ export default function ReservationPage() {
               areasError={areasState.error}
               isLoadingReservations={areasState.reservationsLoading}
               reservationsError={areasState.reservationsError}
-              weekLabel={reservations.weekLabel}
+              calendarLabel={reservations.calendarLabel}
+              isMobile={reservations.isMobile}
               filterAreaId={reservations.filterAreaId}
               onFilterChange={reservations.setFilterAreaId}
               onNewReservation={form.openNew}
               onRetryAreas={areasState.retry}
               onRetryReservations={areasState.retryReservations}
               onToday={() => reservations.selectDay(reservations.todayKey)}
-              onChangeWeek={reservations.changeWeek}
+              onChangePeriod={reservations.changePeriod}
             />
             <div className={styles.calendarLayout}>
               <WeeklyCalendar
-                weekDates={reservations.weekDates}
+                dates={reservations.calendarDates}
+                isMobile={reservations.isMobile}
                 todayKey={reservations.todayKey}
                 bookingGroupsByDate={reservations.bookingGroupsByDate}
                 selectedSlot={reservations.selectedSlot}

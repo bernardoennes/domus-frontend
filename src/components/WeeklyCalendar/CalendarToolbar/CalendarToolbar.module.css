@@ -214,21 +214,33 @@
 }
 
 @media (max-width: 700px) {
+  .toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
   .controls {
-    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    width: 100%;
   }
 
   .createReservationButton {
-    min-height: 38px;
+    min-height: 42px;
+  }
+
+  .weekNavigator {
+    min-width: 0;
+    grid-template-columns: 34px minmax(0, 1fr) 34px;
+  }
+
+  .weekNavigator span {
+    white-space: normal;
+    line-height: 1.3;
   }
 }
 
 @media (max-width: 520px) {
-  .weekNavigator {
-    min-width: 200px;
-    grid-template-columns: 34px minmax(130px, 1fr) 34px;
-  }
-
   .toolbar,
   .controls {
     gap: 6px;

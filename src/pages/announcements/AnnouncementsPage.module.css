@@ -84,8 +84,7 @@
   margin-bottom: 26px;
 }
 
-.searchField,
-.filterField {
+.searchField {
   display: flex;
   align-items: center;
   min-height: 44px;
@@ -101,8 +100,7 @@
   padding: 0 13px;
 }
 
-.searchField input,
-.filterField select {
+.searchField input {
   width: 100%;
   min-width: 0;
   border: 0;
@@ -117,11 +115,10 @@
 
 .filterField {
   flex: 0 1 210px;
-  padding: 0 12px;
 }
 
-.filterField select {
-  cursor: pointer;
+.filterField > button {
+  min-height: 44px;
 }
 
 .primaryButton,
@@ -287,6 +284,16 @@
   margin: 8px 0;
   font-size: 19px;
   line-height: 1.3;
+}
+
+.announcementCard h2,
+.cardExcerpt,
+.cardFooter,
+.noticePost h2,
+.postMeta,
+.postBody,
+.commentContent {
+  overflow-wrap: anywhere;
 }
 
 .cardOverlayLink {
@@ -662,8 +669,7 @@
 .commentComposer textarea:focus,
 .publishForm input:focus,
 .publishForm textarea:focus,
-.searchField:focus-within,
-.filterField:focus-within {
+.searchField:focus-within {
   border-color: var(--focus-color);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--focus-color) 24%, transparent);
 }
@@ -864,6 +870,23 @@
     flex: 1 1 100%;
   }
 
+  .cardTopline {
+    flex-wrap: wrap;
+  }
+
+  .noticeActions {
+    flex-wrap: wrap;
+  }
+
+  .searchField input,
+  .replyForm textarea,
+  .commentComposer textarea,
+  .commentEditForm textarea,
+  .publishForm input,
+  .publishForm textarea {
+    font-size: 16px;
+  }
+
   .replyForm {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -904,11 +927,20 @@
   }
 
   .publishDialog {
+    max-height: calc(100dvh - 24px);
     padding: 18px;
   }
 
+  .dialogBackdrop {
+    padding: 12px;
+  }
+
+  .dialogActions {
+    flex-wrap: wrap;
+  }
+
   .dialogActions > button {
-    flex: 1;
+    flex: 1 1 140px;
   }
 }
 

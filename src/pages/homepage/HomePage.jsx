@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Bell, WarningCircle } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import Header from '../../components/Header/Header.jsx'
@@ -11,11 +11,15 @@ import { fetchCalendarReservations, getNationalHolidays } from '../../services/c
 import { getNumberedAreas } from '../../utils/reservationUtils.js'
 import styles from './HomePage.module.css'
 
+const dashboardPanels = ['Avisos', 'Calendário', 'Ocorrências']
+
 export default function HomePage() {
   const { user, membership } = useAuth()
   const organisationId = membership?.organisation_id
   const announcementState = useAnnouncements(organisationId)
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
+  const [activePanel, setActivePanel] = useState(0)
+  const dashboardRef = useRef(null)
   const [reservationState, setReservationState] = useState({ requestKey: '', reservations: [], error: '' })
   const [reservationRequestId, setReservationRequestId] = useState(0)
   const commonAreas = useCommonAreas(organisationId)
@@ -90,6 +94,27 @@ export default function HomePage() {
     setReservationRequestId((id) => id + 1)
   }
 
+  const updateActivePanel = (event) => {
+    const dashboard = event.currentTarget
+    const left = dashboard.getBoundingClientRect().left
+    const nearest = Array.from(dashboard.children).reduce((closest, panel, index) => {
+      const distance = Math.abs(panel.getBoundingClientRect().left - left)
+      return distance < closest.distance ? { index, distance } : closest
+    }, { index: 0, distance: Infinity })
+    setActivePanel(nearest.index)
+  }
+
+  const showPanel = (index) => {
+    const dashboard = dashboardRef.current
+    const panel = dashboard?.children[index]
+    if (!dashboard || !panel) return
+
+    dashboard.scrollTo({
+      left: dashboard.scrollLeft + panel.getBoundingClientRect().left - dashboard.getBoundingClientRect().left,
+      behavior: 'auto',
+    })
+  }
+
   return (
     <div className={styles.pageShell}>
       <Header
@@ -123,7 +148,27 @@ export default function HomePage() {
             <h1>Olá, {greetingName}!</h1>
           </div>
 
-          <section className={styles.dashboardGrid} aria-label="Resumo do condomínio">
+          <div className={styles.carouselNavigation} role="group" aria-label="Navegar pelo resumo do condomínio">
+            {dashboardPanels.map((panel, index) => (
+              <button
+                key={panel}
+                type="button"
+                aria-controls="dashboard-panels"
+                aria-pressed={activePanel === index}
+                onClick={() => showPanel(index)}
+              >
+                {panel}
+              </button>
+            ))}
+          </div>
+
+          <section
+            id="dashboard-panels"
+            className={styles.dashboardGrid}
+            aria-label="Resumo do condomínio"
+            ref={dashboardRef}
+            onScroll={updateActivePanel}
+          >
             <section className={`${styles.dashboardPanel} ${styles.noticesPanel}`}>
               <header className={styles.panelHeading}>
                 <span className={styles.iconBadge}><Bell size={17} weight="bold" /></span>

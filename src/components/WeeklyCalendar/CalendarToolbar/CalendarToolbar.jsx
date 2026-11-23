@@ -10,14 +10,15 @@ export default function CalendarToolbar({
   areasError,
   isLoadingReservations,
   reservationsError,
-  weekLabel,
+  calendarLabel,
+  isMobile,
   filterAreaId,
   onFilterChange,
   onNewReservation,
   onRetryAreas,
   onRetryReservations,
   onToday,
-  onChangeWeek,
+  onChangePeriod,
 }) {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
 
@@ -60,12 +61,12 @@ export default function CalendarToolbar({
         <button type="button" className={styles.todayButton} onClick={onToday}>
           Hoje
         </button>
-        <div className={styles.weekNavigator} aria-label="Navegação da semana">
-          <button type="button" aria-label="Semana anterior" onClick={() => onChangeWeek(-1)}>
+        <div className={styles.weekNavigator} aria-label={isMobile ? 'Navegação de três dias' : 'Navegação da semana'}>
+          <button type="button" aria-label={isMobile ? 'Três dias anteriores' : 'Semana anterior'} onClick={() => onChangePeriod(-1)}>
             <CaretLeft size={17} weight="bold" />
           </button>
-          <span>{weekLabel}</span>
-          <button type="button" aria-label="Próxima semana" onClick={() => onChangeWeek(1)}>
+          <span>{calendarLabel}</span>
+          <button type="button" aria-label={isMobile ? 'Próximos três dias' : 'Próxima semana'} onClick={() => onChangePeriod(1)}>
             <CaretRight size={17} weight="bold" />
           </button>
         </div>
