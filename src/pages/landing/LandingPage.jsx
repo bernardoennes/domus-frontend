@@ -8,7 +8,7 @@ import './landing.css'
 
 export default function LandingPage() {
   return (
-    <>
+    <div className="landing-page">
       <SplashScreen />
       <Header />
       <main>
@@ -17,6 +17,6 @@ export default function LandingPage() {
         <Beneficios />
         <Recursos />
       </main>
-    </>
+    </div>
   )
 }

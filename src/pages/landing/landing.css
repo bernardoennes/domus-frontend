@@ -1,6 +1,13 @@
-html {
+html:has(.landing-page) {
   scroll-behavior: smooth;
 }
+
+.landing-page {
+  min-height: 100vh;
+  background-color: #111a16;
+  color: #edf3ee;
+  color-scheme: dark;
+  font-family: Poppins, sans-serif;
 
 *{
     font-family: Poppins;
@@ -9,7 +16,7 @@ html {
     box-sizing: border-box;
 }
 
-:root {
+& {
   --background: #111a16;
   --colorWhite: #ffffff;
   --colorGray: #828282;
@@ -20,10 +27,6 @@ html {
   --headerscroll: #213b30;
   --footer:#6b7280;
   --footerborder:#e5e7eb;
-}
-
-body {
-  background-color: var(--background);
 }
 
 .interface {
@@ -555,4 +558,5 @@ main .txt-beneficios h1 {
     left: 0;
     z-index: 88888;
   }
+}
 }
