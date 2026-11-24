@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { CalendarBlank, Clock, MagnifyingGlass, Plus } from '@phosphor-icons/react'
+import { CalendarBlank, Clock, MagnifyingGlass, PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { toast } from 'react-toastify'
 import Select, { SORT_OPTIONS } from '../../Select/Select'
+import RemoveResidentModal from '../RemoveResidentModal/RemoveResidentModal.jsx'
+import EditMemberModal from '../EditMemberModal/EditMemberModal.jsx'
 import styles from './CommonAreasSection.module.css'
 import { AREA_TYPE_LABELS } from '../../../services/commonAreaService.js'
 
@@ -27,8 +29,58 @@ function formatHour(hour) {
   return hour ? String(hour).slice(0, 5) : ''
 }
 
+function formatAreaHours(area) {
+  const start = formatHour(area.start_hour)
+  const end = formatHour(area.end_hour)
+  if (start && end) return `${start} às ${end}`
+  if (start) return `A partir de ${start}`
+  if (end) return `Até ${end}`
+  return 'Não definido'
+}
+
 function isHalfHourTime(hour) {
-  return !hour || /^\d{2}:(00|30)$/.test(hour)
+  return !hour || /^(?:[01]\d|2[0-3]):(?:00|30)$/.test(hour)
+}
+
+function AreaScheduleFields({ form, setForm }) {
+  const toggleWeekday = (weekday) => {
+    setForm((current) => ({
+      ...current,
+      availableWeekdays: current.availableWeekdays.includes(weekday)
+        ? current.availableWeekdays.filter((day) => day !== weekday)
+        : [...current.availableWeekdays, weekday].sort((first, second) => first - second),
+    }))
+  }
+
+  return (
+    <>
+      <fieldset className={styles.weekdayField}>
+        <legend>Dias disponíveis</legend>
+        <div className={styles.weekdayOptions}>
+          {weekdayOptions.map(({ value, label }) => (
+            <label key={value} className={styles.weekdayOption}>
+              <input
+                type="checkbox"
+                checked={form.availableWeekdays.includes(value)}
+                onChange={() => toggleWeekday(value)}
+              />
+              <span>{label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <label className={styles.field}>
+        <span>Horário inicial <small>(opcional)</small></span>
+        <input type="time" step="1800" value={form.startHour}
+          onChange={(event) => setForm((current) => ({ ...current, startHour: event.target.value }))} />
+      </label>
+      <label className={styles.field}>
+        <span>Horário final <small>(opcional)</small></span>
+        <input type="time" step="1800" value={form.endHour}
+          onChange={(event) => setForm((current) => ({ ...current, endHour: event.target.value }))} />
+      </label>
+    </>
+  )
 }
 
 function AvailableWeekdays({ days }) {
@@ -111,10 +163,17 @@ export default function CommonAreasSection({
   hideTitleOnMobile = false,
   onCreate,
   isCreating = false,
+  onRemove,
+  isRemoving = false,
+  onUpdate,
+  isUpdating = false,
 }) {
   const [form, setForm] = useState(initialForm)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortOrder, setSortOrder] = useState('asc')
+  const [areaToRemove, setAreaToRemove] = useState(null)
+  const [areaToEdit, setAreaToEdit] = useState(null)
+  const [editForm, setEditForm] = useState(initialForm)
   const numberedAreas = useMemo(() => getNumberedAreas(items), [items])
   const visibleAreas = useMemo(() => {
     const query = searchTerm.trim().toLocaleLowerCase('pt-BR')
@@ -133,39 +192,59 @@ export default function CommonAreasSection({
       })
   }, [numberedAreas, searchTerm, sortOrder])
 
-  const toggleWeekday = (weekday) => {
-    setForm((current) => ({
-      ...current,
-      availableWeekdays: current.availableWeekdays.includes(weekday)
-        ? current.availableWeekdays.filter((day) => day !== weekday)
-        : [...current.availableWeekdays, weekday].sort((first, second) => first - second),
-    }))
+  const handleRemove = async () => {
+    if (!areaToRemove) return
+
+    try {
+      await onRemove(areaToRemove.id)
+      toast.success('Área comum excluída.')
+      setAreaToRemove(null)
+    } catch (removeError) {
+      toast.error(removeError.message)
+    }
+  }
+
+  const validateSchedule = (schedule) => {
+    if (schedule.availableWeekdays.length === 0) {
+      toast.error('Selecione pelo menos um dia da semana.')
+      return false
+    }
+
+    if (!isHalfHourTime(schedule.startHour) || !isHalfHourTime(schedule.endHour)) {
+      toast.error('Selecione horários em intervalos de 30 minutos.')
+      return false
+    }
+
+    if (schedule.startHour && schedule.endHour && schedule.startHour >= schedule.endHour) {
+      toast.error('O horário final precisa ser posterior ao horário inicial.')
+      return false
+    }
+    return true
   }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
-
-    if (form.availableWeekdays.length === 0) {
-      toast.error('Selecione pelo menos um dia da semana.')
-      return
-    }
-
-    if (!isHalfHourTime(form.startHour) || !isHalfHourTime(form.endHour)) {
-      toast.error('Selecione horários em intervalos de 30 minutos.')
-      return
-    }
-
-    if (form.startHour && form.endHour && form.startHour >= form.endHour) {
-      toast.error('O horário final precisa ser posterior ao horário inicial.')
-      return
-    }
+    if (!validateSchedule(form)) return
 
     try {
-      await onCreate(form)
+      const area = await onCreate(form)
       setForm(initialForm)
-      toast.success('Área comum cadastrada.')
+      toast.success(area.reactivated ? 'Área comum reativada com as novas configurações.' : 'Área comum cadastrada.')
     } catch (createError) {
       toast.error(createError.message ?? 'Não foi possível cadastrar a área comum.')
+    }
+  }
+
+  const handleEdit = async (event) => {
+    event.preventDefault()
+    if (!areaToEdit || !validateSchedule(editForm)) return
+
+    try {
+      await onUpdate({ areaId: areaToEdit.id, ...editForm })
+      setAreaToEdit(null)
+      toast.success('Área comum atualizada.')
+    } catch (updateError) {
+      toast.error(updateError?.message ?? 'Não foi possível atualizar a área comum.')
     }
   }
 
@@ -191,41 +270,7 @@ export default function CommonAreasSection({
               />
             </label>
 
-            <fieldset className={styles.weekdayField}>
-              <legend>Dias disponíveis</legend>
-              <div className={styles.weekdayOptions}>
-                {weekdayOptions.map(({ value, label }) => (
-                  <label key={value} className={styles.weekdayOption}>
-                    <input
-                      type="checkbox"
-                      checked={form.availableWeekdays.includes(value)}
-                      onChange={() => toggleWeekday(value)}
-                    />
-                    <span>{label}</span>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
-            <label className={styles.field}>
-              <span>Horário inicial <small>(opcional)</small></span>
-              <input
-                type="time"
-                step="1800"
-                value={form.startHour}
-                onChange={(event) => setForm({ ...form, startHour: event.target.value })}
-              />
-            </label>
-
-            <label className={styles.field}>
-              <span>Horário final <small>(opcional)</small></span>
-              <input
-                type="time"
-                step="1800"
-                value={form.endHour}
-                onChange={(event) => setForm({ ...form, endHour: event.target.value })}
-              />
-            </label>
+            <AreaScheduleFields form={form} setForm={setForm} />
           </div>
 
           <button type="submit" className={styles.primaryButton} disabled={isCreating}>
@@ -266,18 +311,47 @@ export default function CommonAreasSection({
           <div className={styles.listGrid} tabIndex={0} aria-label="Lista de áreas comuns">
             {visibleAreas.map((area) => (
               <div key={area.id} className={styles.listItem}>
-                <strong className={styles.areaName}>{area.displayName}</strong>
+                <div className={styles.areaHeading}>
+                  <strong className={styles.areaName}>{area.displayName}</strong>
+                  {canManage && (
+                    <div className={styles.rowActions}>
+                      <button
+                        type="button"
+                        className={styles.editButton}
+                        disabled={isUpdating}
+                        title="Editar área comum"
+                        aria-label={`Editar ${area.displayName}`}
+                        onClick={() => {
+                          setEditForm({
+                            availableWeekdays: area.available_weekdays ?? [],
+                            startHour: formatHour(area.start_hour),
+                            endHour: formatHour(area.end_hour),
+                          })
+                          setAreaToEdit(area)
+                        }}
+                      >
+                        <PencilSimple size={18} aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.removeButton}
+                        disabled={isRemoving}
+                        title="Excluir área comum"
+                        aria-label={`Excluir ${area.displayName}`}
+                        onClick={() => setAreaToRemove(area)}
+                      >
+                        <Trash size={18} aria-hidden="true" />
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <div className={styles.areaDetails}>
                   <span className={styles.areaDetail}>
                     <span className={styles.detailLabel}>
                       <Clock size={16} weight="regular" aria-hidden="true" />
                       Horário
                     </span>
-                    <span>
-                      {area.start_hour && area.end_hour
-                        ? `${formatHour(area.start_hour)} às ${formatHour(area.end_hour)}`
-                        : 'Não definido'}
-                    </span>
+                    <span>{formatAreaHours(area)}</span>
                   </span>
                   <span className={`${styles.areaDetail} ${styles.weekdays}`}>
                     <span className={styles.detailLabel}>
@@ -297,6 +371,33 @@ export default function CommonAreasSection({
           </div>
         </section>
       )}
+
+      {areaToEdit && (
+        <EditMemberModal
+          title="Editar área comum"
+          name={areaToEdit.displayName}
+          isSaving={isUpdating}
+          onCancel={() => setAreaToEdit(null)}
+          onSubmit={handleEdit}
+        >
+          <AreaScheduleFields form={editForm} setForm={setEditForm} />
+          <p className={styles.editNote}>As reservas existentes serão mantidas.</p>
+        </EditMemberModal>
+      )}
+
+      <RemoveResidentModal
+        resident={areaToRemove}
+        title="Excluir área comum?"
+        isRemoving={isRemoving}
+        onCancel={() => setAreaToRemove(null)}
+        onConfirm={handleRemove}
+        confirmLabel="Excluir área"
+        description={areaToRemove ? (
+          <>
+            A área <strong>{areaToRemove.displayName}</strong> deixará de aparecer nas listas e não aceitará novas reservas. As reservas já feitas serão mantidas.
+          </>
+        ) : undefined}
+      />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { readDatabase, updateDatabase } from '../lib/localDatabase.js'
-import { addMember, listMembers, removeMember } from './memberService.js'
+import { addMember, assertMember, listMembers, removeMember } from './memberService.js'
 
 const ACCESS_TYPE = 'FUNCIONARIO'
 
@@ -36,14 +36,15 @@ export async function provisionFuncionario({ name, cpf, organisationId, cargoCod
   })
 }
 
-export async function updateEmployeeDetails({ membershipId, cargoCode }) {
+export async function updateEmployeeDetails({ organisationId, membershipId, cargoCode }) {
   updateDatabase((database) => {
-    const details = database.employees.find((item) => item.organisation_user_id === membershipId)
+    const details = database.employees.find((item) => String(item.organisation_user_id) === String(membershipId))
 
     if (!details) {
       throw new Error('Este funcionário não foi encontrado.')
     }
 
+    assertMember(database, { organisationId, membershipId, accessType: ACCESS_TYPE })
     details.cargo_code = cargoCode || null
   })
 }

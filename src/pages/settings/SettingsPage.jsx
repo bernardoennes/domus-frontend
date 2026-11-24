@@ -30,6 +30,10 @@ export default function SettingsPage() {
     areasError,
     createArea,
     isCreatingArea,
+    deleteArea,
+    isRemovingArea,
+    updateArea,
+    isUpdatingArea,
     residentsError,
     createResident,
     isCreatingResident,
@@ -62,6 +66,10 @@ export default function SettingsPage() {
             hideTitleOnMobile={visibleSections.length > 1}
             onCreate={createArea}
             isCreating={isCreatingArea}
+            onRemove={deleteArea}
+            isRemoving={isRemovingArea}
+            onUpdate={updateArea}
+            isUpdating={isUpdatingArea}
           />
         )
       case 'residents':

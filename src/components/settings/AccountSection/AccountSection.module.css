@@ -102,6 +102,35 @@
   outline-offset: 2px;
 }
 
+.editNameButton {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.editNameButton:hover {
+  background: var(--control-hover);
+}
+
+.editNameButton:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+.nameField {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 .securityCard {
   padding: 17px 18px;
 }

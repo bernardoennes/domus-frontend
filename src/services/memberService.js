@@ -47,6 +47,21 @@ export function addMember(database, { name, cpf, organisationId, accessType }) {
   return membership
 }
 
+export function assertMember(database, { organisationId, membershipId, accessType }) {
+  const membership = database.memberships.find((item) => (
+    String(item.id) === String(membershipId)
+    && String(item.organisation_id) === String(organisationId)
+    && item.access_type === accessType
+  ))
+  const user = membership && database.users.find((item) => String(item.id) === String(membership.user_id))
+
+  if (!user) {
+    throw new Error('Este vínculo não foi encontrado neste condomínio.')
+  }
+
+  return membership
+}
+
 export function removeMember(database, { organisationId, userId, accessType }) {
   const membership = database.memberships.find((item) => (
     String(item.organisation_id) === String(organisationId)

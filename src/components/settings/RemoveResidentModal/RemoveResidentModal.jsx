@@ -6,13 +6,17 @@ export default function RemoveResidentModal({
   isRemoving,
   onCancel,
   onConfirm,
+  description,
+  confirmLabel = 'Remover vínculo',
 }) {
   if (!resident) {
     return null
   }
 
   return (
-    <div className={styles.backdrop} onMouseDown={onCancel}>
+    <div className={styles.backdrop} onMouseDown={() => {
+      if (!isRemoving) onCancel()
+    }}>
       <section
         className={styles.dialog}
         role="alertdialog"
@@ -23,14 +27,18 @@ export default function RemoveResidentModal({
       >
         <h2 id="remove-resident-title">{title}</h2>
         <p id="remove-resident-description">
-          O vínculo de <strong>{resident.name}</strong> com este condomínio será removido. A conta e o perfil da pessoa serão mantidos.
+          {description ?? (
+            <>
+              O vínculo de <strong>{resident.name}</strong> com este condomínio será removido. A conta e o perfil da pessoa serão mantidos.
+            </>
+          )}
         </p>
         <div className={styles.actions}>
           <button type="button" className={styles.cancelButton} onClick={onCancel} disabled={isRemoving}>
             Cancelar
           </button>
           <button type="button" className={styles.confirmButton} onClick={onConfirm} disabled={isRemoving}>
-            {isRemoving ? 'Removendo...' : 'Remover vínculo'}
+            {isRemoving ? 'Removendo...' : confirmLabel}
           </button>
         </div>
       </section>

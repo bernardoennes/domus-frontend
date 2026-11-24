@@ -73,6 +73,10 @@ export function readDatabase() {
 
   if (!('announcements' in database)) database.announcements = []
   if (!('tickets' in database)) database.tickets = []
+  database.areas = database.areas.map((area) => ({
+    ...area,
+    is_deleted: Boolean(area.is_deleted),
+  }))
 
   if (TABLES.some((table) => !Array.isArray(database[table]))) {
     throw new Error('O formato dos dados salvos é inválido.')

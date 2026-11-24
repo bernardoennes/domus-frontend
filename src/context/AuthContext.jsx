@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react'
 import { getCurrentSession, loginUser, logoutUser } from '../services/authService.js'
+import { updateOwnName } from '../services/userService.js'
 
 const AuthContext = createContext(null)
 
@@ -42,6 +43,11 @@ export function AuthProvider({ children }) {
     setSession(null)
   }
 
+  const changeOwnName = async (name) => {
+    const updatedName = await updateOwnName(name)
+    setSession((current) => current ? { ...current, user: { ...current.user, name: updatedName } } : current)
+  }
+
   const user = session?.user ?? null
   const membership = session?.membership ?? null
 
@@ -53,6 +59,7 @@ export function AuthProvider({ children }) {
     isAuthenticated: Boolean(user && membership),
     signIn,
     signOut,
+    changeOwnName,
     clearError: () => setError(''),
   }
 

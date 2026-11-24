@@ -13,6 +13,42 @@ export function maskCpf(cpf) {
   return `${first}.***.***-${last}`
 }
 
+export async function updateOwnName(name) {
+  const normalizedName = String(name ?? '').trim()
+  if (!normalizedName) {
+    throw new Error('Informe o nome completo.')
+  }
+  const userId = readSessionUserId()
+  if (userId == null) {
+    throw new Error('Sua sessão expirou. Entre novamente para alterar o nome.')
+  }
+
+  return updateDatabase((database) => {
+    const user = database.users.find((item) => item.id === userId)
+    if (!user || !database.memberships.some((item) => item.user_id === userId)) {
+      throw new Error('Sua sessão expirou. Entre novamente para alterar o nome.')
+    }
+
+    user.name = normalizedName
+    for (const announcement of database.announcements) {
+      if (announcement.author?.id != null && String(announcement.author.id) === String(userId)) {
+        announcement.author.name = normalizedName
+      }
+      for (const comment of announcement.comments) {
+        if (comment.author?.id != null && String(comment.author.id) === String(userId)) {
+          comment.author.name = normalizedName
+        }
+      }
+    }
+    for (const ticket of database.tickets) {
+      if (ticket.creator_id != null && String(ticket.creator_id) === String(userId)) {
+        ticket.creator_name = normalizedName
+      }
+    }
+    return normalizedName
+  })
+}
+
 export async function updatePassword({ currentPassword, newPassword }) {
   const userId = readSessionUserId()
   const user = readDatabase().users.find((item) => item.id === userId)

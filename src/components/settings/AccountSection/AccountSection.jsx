@@ -1,16 +1,20 @@
 import { useState } from 'react'
-import { Eye, EyeSlash, LockKey, SignOut } from '@phosphor-icons/react'
+import { Eye, EyeSlash, LockKey, PencilSimple, SignOut } from '@phosphor-icons/react'
 import { toast } from 'react-toastify'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../context/AuthContext.jsx'
 import { updatePassword } from '../../../services/userService.js'
 import { getPasswordValidation } from '../../../utils/passwordValidation.js'
 import PasswordRequirements from '../../auth/PasswordRequirements/PasswordRequirements.jsx'
+import EditMemberModal from '../EditMemberModal/EditMemberModal.jsx'
 import styles from './AccountSection.module.css'
 
 export default function AccountSection({ profile, hideTitleOnMobile = false }) {
   const navigate = useNavigate()
-  const { signOut } = useAuth()
+  const { signOut, changeOwnName } = useAuth()
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [name, setName] = useState('')
+  const [isSavingName, setIsSavingName] = useState(false)
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
   const [visiblePasswords, setVisiblePasswords] = useState({})
   const [isSavingPassword, setIsSavingPassword] = useState(false)
@@ -64,6 +68,20 @@ export default function AccountSection({ profile, hideTitleOnMobile = false }) {
     navigate('/login', { replace: true })
   }
 
+  const handleNameSubmit = async (event) => {
+    event.preventDefault()
+    setIsSavingName(true)
+    try {
+      await changeOwnName(name)
+      setIsEditingName(false)
+      toast.success('Nome atualizado.')
+    } catch (error) {
+      toast.error(error?.message ?? 'Não foi possível alterar o nome.')
+    } finally {
+      setIsSavingName(false)
+    }
+  }
+
   return (
     <div className={styles.pageContent}>
       <header className={styles.pageHeading}>
@@ -81,6 +99,18 @@ export default function AccountSection({ profile, hideTitleOnMobile = false }) {
         </div>
         <button
           type="button"
+          className={styles.editNameButton}
+          aria-label="Editar meu nome"
+          title="Editar meu nome"
+          onClick={() => {
+            setName(profile?.name ?? '')
+            setIsEditingName(true)
+          }}
+        >
+          <PencilSimple size={19} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
           className={styles.logoutButton}
           onClick={handleLogout}
           aria-label="Sair da conta"
@@ -89,6 +119,21 @@ export default function AccountSection({ profile, hideTitleOnMobile = false }) {
           <SignOut size={19} weight="regular" aria-hidden="true" />
         </button>
       </section>
+
+      {isEditingName && (
+        <EditMemberModal
+          title="Editar meu nome"
+          name={profile?.name}
+          isSaving={isSavingName}
+          onCancel={() => setIsEditingName(false)}
+          onSubmit={handleNameSubmit}
+        >
+          <label className={styles.nameField}>
+            Nome completo
+            <input required value={name} onChange={(event) => setName(event.target.value)} />
+          </label>
+        </EditMemberModal>
+      )}
 
       <section className={styles.securityCard}>
         <header className={styles.securityHeading}>

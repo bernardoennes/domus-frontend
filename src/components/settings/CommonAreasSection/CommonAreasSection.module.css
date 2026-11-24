@@ -227,6 +227,8 @@
 
 .listGrid {
   display: grid;
+  align-content: start;
+  grid-auto-rows: max-content;
 }
 
 .listItem {
@@ -235,10 +237,69 @@
 }
 
 .areaName {
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border-color);
+  min-width: 0;
   font-size: 16px;
   line-height: 1.25;
+}
+
+.areaHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editButton,
+.removeButton {
+  display: inline-grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.editButton {
+  color: var(--text-secondary);
+}
+
+.editButton:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  background: var(--control-hover);
+  color: var(--text-primary);
+}
+
+.removeButton {
+  color: var(--danger-text);
+}
+
+.removeButton:hover:not(:disabled) {
+  border-color: var(--danger-border);
+  background: var(--danger-bg);
+}
+
+.removeButton:disabled,
+.editButton:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.editNote {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .listItem strong {

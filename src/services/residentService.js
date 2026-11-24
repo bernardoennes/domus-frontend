@@ -1,5 +1,5 @@
 import { readDatabase, updateDatabase } from '../lib/localDatabase.js'
-import { addMember, listMembers, removeMember } from './memberService.js'
+import { addMember, assertMember, listMembers, removeMember } from './memberService.js'
 
 const ACCESS_TYPE = 'CONDOMINO'
 
@@ -48,16 +48,25 @@ export async function provisionCondomino({ name, cpf, organisationId, block, uni
   })
 }
 
-export async function updateResidentDetails({ membershipId, block, unitNumber }) {
+export async function updateResidentDetails({ organisationId, membershipId, block, unitNumber }) {
+  const residentBlock = String(block ?? '').trim()
+  if (!residentBlock) {
+    throw new Error('Informe o bloco.')
+  }
+  if (!Number.isSafeInteger(Number(unitNumber)) || Number(unitNumber) < 1) {
+    throw new Error('Informe um número de unidade válido.')
+  }
+
   updateDatabase((database) => {
-    const details = database.residents.find((item) => item.organisation_user_id === membershipId)
+    const details = database.residents.find((item) => String(item.organisation_user_id) === String(membershipId))
 
     if (!details) {
       throw new Error('Este morador não foi encontrado.')
     }
 
-    details.block = block
-    details.unit_number = unitNumber
+    assertMember(database, { organisationId, membershipId, accessType: ACCESS_TYPE })
+    details.block = residentBlock
+    details.unit_number = Number(unitNumber)
   })
 }
 

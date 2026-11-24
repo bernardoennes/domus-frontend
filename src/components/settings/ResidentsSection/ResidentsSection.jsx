@@ -74,7 +74,7 @@ export default function ResidentsSection({
     try {
       await onCreate({ ...form, cpf, unitNumber })
       setForm(initialForm)
-      toast.success('Condômino cadastrado. Ele define a senha no primeiro acesso, usando o CPF informado.')
+      toast.success('Condômino cadastrado. Se ainda não tiver senha, ele pode defini-la no primeiro acesso.')
     } catch (createError) {
       toast.error(createError.message)
     }

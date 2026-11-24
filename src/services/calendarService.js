@@ -25,17 +25,20 @@ function mapReservation(reservation, areas, users) {
   }
 }
 
-export async function fetchCalendarReservations(organisationId, areas) {
-  if (!organisationId || areas.length === 0) {
+export async function fetchCalendarReservations(organisationId, _areas) {
+  if (!organisationId) {
     return []
   }
 
   const database = readDatabase()
-  const areaIds = new Set(areas.map((area) => String(area.id)))
+  const organisationAreas = database.areas.filter((area) => (
+    String(area.organisation_id) === String(organisationId)
+  ))
+  const areaIds = new Set(organisationAreas.map((area) => String(area.id)))
 
   return database.reservations
     .filter((reservation) => areaIds.has(String(reservation.reserved_area)))
-    .map((reservation) => mapReservation(reservation, areas, database.users))
+    .map((reservation) => mapReservation(reservation, organisationAreas, database.users))
 }
 
 export async function saveCalendarReservation({ organisationId, reservation, area, profile, isEvent }) {
@@ -68,6 +71,10 @@ export async function saveCalendarReservation({ organisationId, reservation, are
 
     if (!storedArea) {
       throw new Error('A área comum selecionada não foi encontrada.')
+    }
+
+    if (storedArea.is_deleted) {
+      throw new Error('Esta área comum foi excluída e não aceita novas reservas.')
     }
 
     if (toMinutes(details.start_date) >= toMinutes(details.end_date)) {

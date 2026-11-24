@@ -68,7 +68,7 @@ export default function EmployeesSection({
     try {
       await onCreate({ name: form.name.trim(), cpf, cargoCode: form.cargoCode })
       setForm(initialForm)
-      toast.success('Funcionário cadastrado. Ele define a senha no primeiro acesso, usando o CPF informado.')
+      toast.success('Funcionário cadastrado. Se ainda não tiver senha, ele pode defini-la no primeiro acesso.')
     } catch (createError) {
       toast.error(createError.message)
     }

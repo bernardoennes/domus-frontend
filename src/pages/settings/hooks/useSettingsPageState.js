@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { createCommonArea as createCommonAreaRequest, fetchCommonAreas } from '../../../services/commonAreaService.js'
+import {
+  createCommonArea as createCommonAreaRequest,
+  fetchCommonAreas,
+  removeCommonArea as removeCommonAreaRequest,
+  updateCommonArea as updateCommonAreaRequest,
+} from '../../../services/commonAreaService.js'
 import { fetchResidents, provisionCondomino, removeCondomino, updateResidentDetails } from '../../../services/residentService.js'
 import { fetchEmployees, provisionFuncionario, removeFuncionario, updateEmployeeDetails } from '../../../services/employeeService.js'
 import { buildUserProfile } from '../../../services/userService.js'
@@ -17,6 +22,8 @@ export function useSettingsPageState({ user, membership }) {
   const [isLoading, setIsLoading] = useState(true)
   const [areasError, setAreasError] = useState('')
   const [isCreatingArea, setIsCreatingArea] = useState(false)
+  const [isRemovingArea, setIsRemovingArea] = useState(false)
+  const [isUpdatingArea, setIsUpdatingArea] = useState(false)
   const [residentsError, setResidentsError] = useState('')
   const [isCreatingResident, setIsCreatingResident] = useState(false)
   const [isRemovingResident, setIsRemovingResident] = useState(false)
@@ -200,6 +207,51 @@ export function useSettingsPageState({ user, membership }) {
     }
   }
 
+  const updateArea = async ({ areaId, availableWeekdays, startHour, endHour }) => {
+    if (!canManage) {
+      throw new Error('Apenas síndicos podem editar áreas comuns.')
+    }
+    if (!membership?.organisation_id || !Number.isSafeInteger(Number(areaId))) {
+      throw new Error('Não foi possível identificar a área comum ou o condomínio.')
+    }
+    setIsUpdatingArea(true)
+    try {
+      const area = await updateCommonAreaRequest({
+        organisationId: membership.organisation_id, areaId, availableWeekdays, startHour, endHour,
+      })
+      setCommonAreas((current) => current.map((item) => String(item.id) === String(area.id) ? area : item))
+      return area
+    } finally {
+      setIsUpdatingArea(false)
+    }
+  }
+
+  const deleteArea = async (areaId) => {
+    if (!canManage) {
+      throw new Error('Apenas síndicos podem excluir áreas comuns.')
+    }
+
+    if (!membership?.organisation_id || !Number.isSafeInteger(Number(areaId))) {
+      throw new Error('Não foi possível identificar a área comum ou o condomínio.')
+    }
+
+    setIsRemovingArea(true)
+
+    try {
+      const result = await removeCommonAreaRequest({
+        organisationId: membership.organisation_id,
+        areaId: Number(areaId),
+      })
+      setCommonAreas(await fetchCommonAreas(membership.organisation_id))
+      setAreasError('')
+      return result
+    } catch (error) {
+      throw new Error(error?.message ?? 'Não foi possível excluir a área comum.')
+    } finally {
+      setIsRemovingArea(false)
+    }
+  }
+
   const deleteResident = async (userId) => {
     if (!canManage) {
       throw new Error('Apenas síndicos podem remover condôminos.')
@@ -235,7 +287,7 @@ export function useSettingsPageState({ user, membership }) {
     setIsUpdatingResident(true)
 
     try {
-      await updateResidentDetails({ membershipId, block, unitNumber })
+      await updateResidentDetails({ organisationId: membership?.organisation_id, membershipId, block, unitNumber })
       setResidents(await fetchResidents(membership.organisation_id))
       setResidentsError('')
     } finally {
@@ -251,7 +303,7 @@ export function useSettingsPageState({ user, membership }) {
     setIsUpdatingEmployee(true)
 
     try {
-      await updateEmployeeDetails({ membershipId, cargoCode })
+      await updateEmployeeDetails({ organisationId: membership?.organisation_id, membershipId, cargoCode })
       setEmployees(await fetchEmployees(membership.organisation_id))
       setEmployeesError('')
     } finally {
@@ -280,6 +332,10 @@ export function useSettingsPageState({ user, membership }) {
     areasError,
     createArea,
     isCreatingArea,
+    deleteArea,
+    isRemovingArea,
+    updateArea,
+    isUpdatingArea,
     residentsError,
     createResident,
     isCreatingResident,
