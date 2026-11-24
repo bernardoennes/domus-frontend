@@ -6,10 +6,19 @@ function assertOrganisation(organisationId) {
   }
 }
 
-export async function fetchTickets(organisationId) {
+export async function fetchTickets(organisationId, userId, accessType) {
   assertOrganisation(organisationId)
+  const normalizedAccessType = String(accessType ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+  const canViewAll = normalizedAccessType === 'SINDICO' || normalizedAccessType === 'FUNCIONARIO'
+
   return readDatabase().tickets
-    .filter((item) => String(item.organisation_id) === String(organisationId))
+    .filter((item) => (
+      String(item.organisation_id) === String(organisationId)
+      && (canViewAll || String(item.creator_id ?? '') === String(userId ?? ''))
+    ))
     .sort((first, second) => second.created_at.localeCompare(first.created_at))
 }
 

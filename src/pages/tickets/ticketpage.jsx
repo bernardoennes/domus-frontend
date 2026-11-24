@@ -41,7 +41,7 @@ export default function Tickets() {
       return undefined
     }
 
-    fetchTickets(organisationId)
+    fetchTickets(organisationId, user?.id, accessType)
       .then((data) => {
         if (isMounted) {
           setTicketState({ organisationId: String(organisationId), tickets: data, loading: false })
@@ -58,7 +58,7 @@ export default function Tickets() {
     return () => {
       isMounted = false
     }
-  }, [organisationId])
+  }, [organisationId, user?.id, accessType])
 
   const handleCreateTicket = async (e) => {
     e.preventDefault()
@@ -73,7 +73,9 @@ export default function Tickets() {
       categoria: novaCategoria,
       local: novoLocal,
       situacao: 'Em aberto',
-      descricao: novaDescricao
+      descricao: novaDescricao,
+      creator_id: user?.id,
+      creator_name: userName,
     }
 
     try {

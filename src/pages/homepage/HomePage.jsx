@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Bell, WarningCircle } from '@phosphor-icons/react'
+import { Bell, Ticket } from '@phosphor-icons/react'
 import { Link } from 'react-router-dom'
 import Header from '../../components/Header/Header.jsx'
 import MonthlyCalendar from '../../components/MonthlyCalendar/MonthlyCalendar.jsx'
@@ -8,10 +8,11 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import useCommonAreas from '../../hooks/useCommonAreas.js'
 import useAnnouncements from '../../hooks/useAnnouncements.js'
 import { fetchCalendarReservations, getNationalHolidays } from '../../services/calendarService.js'
+import { fetchTickets } from '../../services/ticketService.js'
 import { getNumberedAreas } from '../../utils/reservationUtils.js'
 import styles from './HomePage.module.css'
 
-const dashboardPanels = ['Avisos', 'Calendário', 'Ocorrências']
+const dashboardPanels = ['Avisos', 'Calendário', 'Tickets']
 
 export default function HomePage() {
   const { user, membership } = useAuth()
@@ -21,6 +22,7 @@ export default function HomePage() {
   const [activePanel, setActivePanel] = useState(0)
   const dashboardRef = useRef(null)
   const [reservationState, setReservationState] = useState({ requestKey: '', reservations: [], error: '' })
+  const [ticketState, setTicketState] = useState({ organisationId: '', tickets: [], isLoading: false, error: '' })
   const [reservationRequestId, setReservationRequestId] = useState(0)
   const commonAreas = useCommonAreas(organisationId)
   const areas = useMemo(() => getNumberedAreas(commonAreas.areas), [commonAreas.areas])
@@ -36,6 +38,10 @@ export default function HomePage() {
     && (commonAreas.isLoading || reservationState.requestKey !== requestKey)
   const reservationsError = commonAreas.error
     || (reservationState.requestKey === requestKey ? reservationState.error : '')
+  const ticketLoading = ticketState.organisationId !== String(organisationId ?? '') || ticketState.isLoading
+  const visibleTickets = ticketState.organisationId === String(organisationId ?? '')
+    ? ticketState.tickets
+    : []
 
   const holidays = useMemo(() => [
     ...getNationalHolidays(new Date().getFullYear()),
@@ -55,6 +61,36 @@ export default function HomePage() {
     first.date.localeCompare(second.date)
     || String(first.startTime ?? '').localeCompare(String(second.startTime ?? ''))
   )), [holidays, reservations])
+
+  useEffect(() => {
+    if (!organisationId) {
+      setTicketState({ organisationId: '', tickets: [], isLoading: false, error: '' })
+      return undefined
+    }
+
+    let isCurrent = true
+
+    fetchTickets(organisationId, user?.id, membership?.access_type)
+      .then((tickets) => {
+        if (isCurrent) {
+          setTicketState({ organisationId: String(organisationId), tickets, isLoading: false, error: '' })
+        }
+      })
+      .catch((error) => {
+        if (isCurrent) {
+          setTicketState({
+            organisationId: String(organisationId),
+            tickets: [],
+            isLoading: false,
+            error: error?.message ?? 'Não foi possível carregar os tickets.',
+          })
+        }
+      })
+
+    return () => {
+      isCurrent = false
+    }
+  }, [organisationId, user?.id, membership?.access_type])
 
   useEffect(() => {
     if (commonAreas.isLoading || commonAreas.error) {
@@ -219,10 +255,32 @@ export default function HomePage() {
 
             <section className={`${styles.dashboardPanel} ${styles.occurrencesPanel}`}>
               <header className={styles.panelHeading}>
-                <span className={styles.iconBadge}><WarningCircle size={17} weight="bold" /></span>
-                <h2>Ocorrências</h2>
+                <span className={styles.iconBadge}><Ticket size={17} weight="bold" /></span>
+                <h2><Link className={styles.panelTitleLink} to="/tickets">Tickets</Link></h2>
               </header>
-              <p className={styles.implementationState}>Faltando implementação</p>
+              {ticketState.error && (
+                <p className={styles.announcementStatus} role="alert">{ticketState.error}</p>
+              )}
+              {ticketLoading && (
+                <p className={styles.announcementStatus}>Carregando tickets…</p>
+              )}
+              {!ticketLoading && !ticketState.error && (
+                <>
+                  {visibleTickets.slice(0, 3).map((ticket) => (
+                    <Link key={ticket.id} to="/tickets" className={styles.noticePreview}>
+                      <strong>{ticket.assunto}</strong>
+                      <span>{ticket.code} · {ticket.categoria}</span>
+                      <small>{ticket.situacao} · {ticket.creator_name ?? ticket.solicitacao}</small>
+                    </Link>
+                  ))}
+                  {visibleTickets.length === 0 && (
+                    <p className={styles.announcementStatus}>
+                      Ainda não há tickets abertos.
+                    </p>
+                  )}
+                  <Link to="/tickets" className={styles.viewAllNotices}>Ver todos os chamados</Link>
+                </>
+              )}
             </section>
           </section>
         </main>
