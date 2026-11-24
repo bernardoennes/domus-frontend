@@ -35,7 +35,7 @@ export default function Header({
   const handleReturnHome = () => {
     setIsProfileOpen(false)
     closeMobileMenu()
-    navigate('/')
+    navigate('/home')
   }
 
   const handleLogout = async () => {
@@ -53,7 +53,7 @@ export default function Header({
       ].filter(Boolean).join(' ')}
     >
       <Link
-        to="/"
+        to="/home"
         className={styles.brandBlock}
         onClick={() => {
           setIsProfileOpen(false)

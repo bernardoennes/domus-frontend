@@ -1,0 +1,537 @@
+.landing {
+  min-height: 100vh;
+  color: #fff;
+  background: #111a16;
+  scroll-behavior: smooth;
+}
+
+.landing,
+.landing * {
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+.interface {
+  max-width: 1380px;
+  padding: 0 2%;
+  margin: 0 auto;
+}
+
+.splash {
+  position: fixed;
+  z-index: 99999;
+  inset: 0;
+  background: #111a16;
+  transition: 1s;
+}
+
+.splashLeaving {
+  top: -100vh;
+}
+
+.splashLogoHeader {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  margin: 0;
+  transform: translate(-50%, -50%);
+  color: #fff;
+}
+
+.splashLogo {
+  position: relative;
+  display: block;
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  bottom: 0;
+  opacity: 1;
+  animation: splash 1.8s ease-in-out both;
+}
+
+@keyframes splash {
+  0% { bottom: -20px; opacity: 0; }
+  25%, 75% { bottom: 0; opacity: 1; }
+  100% { bottom: 150px; opacity: 0; }
+}
+
+.header {
+  background: #213b3073;
+  padding: 16px 0;
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+  transition: 0.5s;
+}
+
+.headerScrolled {
+  background: #213b30;
+}
+
+.header > .interface,
+.headerInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand img {
+  max-width: 80px;
+  display: block;
+}
+
+.desktopNav {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  margin-left: 400px;
+  gap: 50px;
+}
+
+.desktopNav a {
+  color: #fff;
+  text-decoration: none;
+  transition: 0.5s;
+}
+
+.desktopNav a:hover {
+  color: #828282;
+}
+
+.desktopNav a:active {
+  opacity: 0.55;
+  transform: scale(0.96);
+  transition: 0.08s;
+}
+
+.headerActions {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.contactButton {
+  background: transparent;
+  border: none;
+  margin-top: 8px;
+  cursor: pointer;
+  height: 40px;
+  transition: 0.08s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.contactButton img {
+  width: 22px;
+  height: 22px;
+}
+
+.loginButton {
+  background: transparent;
+  border: 2px solid #fff;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  width: 130px;
+  height: 40px;
+  transition: 0.3s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.loginButton:hover {
+  background: #fff;
+  color: #111a16;
+}
+
+.loginButton:active,
+.registerButton:active,
+.contactButton:active {
+  transform: scale(0.94);
+  transition-duration: 0.08s;
+}
+
+.registerButton {
+  background: #fff;
+  border: none;
+  border-radius: 5px;
+  color: #111a16;
+  cursor: pointer;
+  width: 130px;
+  height: 40px;
+  transition: 0.5s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.registerButton:hover {
+  background: transparent;
+  color: #fff;
+  border: 2px solid #fff;
+}
+
+.mobileTrigger,
+.mobileNav {
+  display: none;
+}
+
+.hero {
+  background: url('../../assets/landing/Hero.png') center / cover no-repeat;
+  min-height: 100vh;
+  scroll-margin-top: 80px;
+}
+
+.hero > .interface {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 120px;
+  min-height: 100vh;
+  padding: 120px 2%;
+}
+
+.heroText {
+  color: #fff;
+  text-align: center;
+}
+
+.heroText h1 {
+  line-height: 2;
+  margin: 24px 0;
+  font-size: 100px;
+  text-align: center;
+}
+
+.heroText h2 {
+  font-size: 25px;
+  text-align: center;
+}
+
+.heroText p {
+  line-height: 1;
+  margin: 24px 0;
+}
+
+.heroText button {
+  width: 150px;
+  height: 35px;
+  background: transparent;
+  border-radius: 5px;
+  border: 2px solid #fff;
+  margin-right: 15px;
+  color: #fff;
+  transition: 0.5s;
+  cursor: pointer;
+  padding: 0 8px;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+}
+
+.heroDownload {
+  display: inline-block;
+  margin-right: 15px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.heroDownload button {
+  margin-right: 0;
+}
+
+.heroDownload:active button {
+  transform: scale(0.96);
+  transition-duration: 0.08s;
+}
+
+.heroText button:hover {
+  background: #fff;
+  color: #111a16;
+}
+
+[data-reveal] {
+  opacity: 0;
+  transition: opacity 2s ease, transform 2s ease;
+}
+
+.heroText[data-reveal] {
+  transform: translateY(90px);
+}
+
+.managerCard[data-reveal],
+.residentCard[data-reveal] {
+  transform: translateY(90px);
+}
+
+.residentCard[data-reveal] {
+  transition-delay: 0.4s;
+}
+
+.phoneVideo[data-reveal] {
+  transform: translateX(90px);
+  transition-delay: 0.7s;
+}
+
+.notebookVideo[data-reveal] {
+  transform: translateX(-90px);
+  transform-origin: left;
+}
+
+.resourceList[data-reveal] {
+  transform: translateX(90px);
+  transition-delay: 0.7s;
+}
+
+[data-reveal].revealed {
+  opacity: 1;
+  transform: translate(0, 0);
+}
+
+.benefits {
+  background: url('../../assets/landing/Background.png') center / cover no-repeat;
+  min-height: 100vh;
+  scroll-margin-top: 80px;
+}
+
+.benefits > .interface {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 100vh;
+}
+
+.benefitsCards {
+  display: flex;
+  gap: 40px;
+  width: 100%;
+  margin-top: 70px;
+}
+
+.managerCard,
+.residentCard {
+  width: 400px;
+  height: 500px;
+  background: #244f4048;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  align-items: center;
+  border-radius: 15px;
+  border: 2px solid #80ef80;
+}
+
+.managerCard img,
+.residentCard img {
+  margin-top: 30px;
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  background: #e99068;
+  border-radius: 15px;
+  border: 5px solid #e99068;
+}
+
+.managerCard h1,
+.residentCard h1 {
+  margin: 24px 0;
+  font-size: 1.2em;
+  color: #fff;
+}
+
+.managerCard p,
+.residentCard p {
+  margin: 0;
+  gap: 40px;
+  line-height: 1.2;
+}
+
+.phoneVideo {
+  max-width: 300px;
+  height: 600px;
+  margin-top: -50px;
+  margin-left: 110px;
+}
+
+.phoneVideo video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.resources {
+  background: url('../../assets/landing/Background2.png') center / cover no-repeat;
+  min-height: 100vh;
+  scroll-margin-top: 80px;
+}
+
+.resources > .interface {
+  padding: 150px 2%;
+  min-height: 100vh;
+}
+
+.resourcesCards {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 200px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.notebookVideo {
+  max-width: 600px;
+}
+
+.notebookVideo video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.resourceList h1 {
+  padding: 30px;
+  text-align: center;
+  margin-top: -50px;
+}
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px 0;
+  text-align: center;
+  font-size: 14px;
+  color: #6b7280;
+  border-top: 1px solid #e5e7eb;
+  background: rgba(17, 26, 22, 0.25);
+}
+
+@media screen and (max-width: 1240px) {
+  .landing,
+  .landing input,
+  .landing select,
+  .landing textarea {
+    font-size: 16px;
+  }
+
+  .hero > .interface {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
+
+  .benefitsCards {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+  }
+
+  .phoneVideo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 300px;
+    height: 600px;
+    margin: 0 auto;
+  }
+
+  .resourcesCards {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+  }
+
+  .notebookVideo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .phoneVideo video,
+  .notebookVideo video {
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
+
+  .desktopNav,
+  .headerActions {
+    display: none;
+  }
+
+  .mobileTrigger {
+    display: block;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 28px;
+    cursor: pointer;
+  }
+
+  .mobileNav {
+    display: block;
+    background: #111c18;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 99999;
+    width: 0;
+    overflow: hidden;
+    transition: width 0.3s ease;
+  }
+
+  .mobileNavOpen {
+    width: 70%;
+    max-width: 300px;
+  }
+
+  .mobileNav a,
+  .mobileNav button {
+    display: block;
+    width: 100%;
+    color: #fff;
+    text-decoration: none;
+    font-size: 18px;
+    padding: 18px 28px;
+    border: none;
+    background: transparent;
+    text-align: right;
+  }
+
+  .mobileClose {
+    width: auto !important;
+    margin: 0 0 0 auto;
+  }
+
+  .footer {
+    position: fixed;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash,
+  .splashLogo,
+  [data-reveal],
+  .heroText button,
+  .loginButton,
+  .registerButton {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

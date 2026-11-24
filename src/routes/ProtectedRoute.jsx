@@ -16,7 +16,7 @@ export function AdminRegistrationRoute({ children }) {
   const { isAuthenticated } = useAuth()
 
   if (isAuthenticated || !needsAdminSetup()) {
-    return <Navigate to={isAuthenticated ? '/' : '/login'} replace />
+    return <Navigate to={isAuthenticated ? '/home' : '/login'} replace />
   }
 
   return children
@@ -26,7 +26,7 @@ export function LoginRoute({ children }) {
   const { isAuthenticated } = useAuth()
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/home" replace />
   }
 
   return children

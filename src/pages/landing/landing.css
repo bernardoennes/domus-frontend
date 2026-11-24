@@ -1,0 +1,558 @@
+html {
+  scroll-behavior: smooth;
+}
+
+*{
+    font-family: Poppins;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+  --background: #111a16;
+  --colorWhite: #ffffff;
+  --colorGray: #828282;
+  --ColorDarkGreen: #244f4048;
+  --ColorGreen: #80ef80;
+  --colorbrown: #e99068;
+  --headerbackground: #213b3073;
+  --headerscroll: #213b30;
+  --footer:#6b7280;
+  --footerborder:#e5e7eb;
+}
+
+body {
+  background-color: var(--background);
+}
+
+.interface {
+  max-width: 1380px;
+  padding: 0 2%;
+  margin: 0 auto;
+}
+
+/* Evita que o header fixo/sobreposto cubra o topo da seção ao rolar */
+#inicio,
+#beneficios,
+#recursos {
+  scroll-margin-top: 80px; /* ajuste conforme a altura do seu header */
+}
+
+.intro {
+  position: fixed;
+  z-index: 99999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  background-color: var(--background);
+  transition: 1s;
+}
+
+.logo-header{
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    color: #fff;
+}   
+
+.logo{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    bottom: -20px;
+    opacity: 0;
+    font-size: 4vh;
+    line-height: 1;
+}
+
+.logo.active{
+    bottom: 0;
+    opacity: 1;
+    transition: ease-in-out 0.5s;
+}
+
+.logo.fade{
+    bottom: 150px;
+    opacity: 0;
+    transition: ease-in-out 0.5s;
+}
+
+.splash-logo-img {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  display: block;
+}
+
+
+/* Header */
+
+header {
+  background-color: var(--headerbackground);
+  padding: 16px 0;
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+  transition: .5s
+}
+
+header.rolagem {
+    background-color: var(--headerscroll);
+}
+
+
+header > .interface {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+header .logotipo-cabecalho img {
+  max-width: 80px;
+}
+
+header nav.menu-desktop ul {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  margin-left: 400px;
+  gap: 50px;
+}
+
+header nav.menu-desktop a {
+  color: var(--colorWhite);
+  text-decoration: none;
+  transition: 0.5s;
+}
+
+header nav.menu-desktop a:hover {
+  color: var(--colorGray);
+}
+
+/* Header Botões */
+
+
+header .btn ul {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+header .btn .btn-contato {
+  background-color: transparent;
+  border: none;
+  margin-top: 8px;
+  cursor: pointer;
+}
+
+header .btn .btn-entrar {
+  background-color: transparent;
+  border: 2px solid var(--colorWhite);
+  border-radius: 5px;
+  color: var(--colorWhite);
+  cursor: pointer;
+  width: 130px;
+  height: 40px;
+  transition: 0.3s;
+}
+
+header .btn .btn-entrar:hover {
+  background-color: var(--colorWhite);
+  color: var(--background);
+}
+
+header .btn .btn-cadastre-se {
+  background-color: var(--colorWhite);
+  border: none;
+  border-radius: 5px;
+  color: var(--background);
+  cursor: pointer;
+  width: 130px;
+  height: 40px;
+  transition: 0.5s;
+}
+
+header .btn .btn-cadastre-se:hover {
+  background-color: transparent;
+  color: var(--colorWhite);
+  border: 2px solid var(--colorWhite);
+}
+
+.btn-abrir-menu,
+.menu-mobile {
+  display: none;
+}
+
+ /*hero*/ 
+
+ .hero {
+  background-image: url('../../assets/landing/Hero.png');
+  background-size: cover;          
+  background-position: center;     
+  background-repeat: no-repeat;    
+  min-height: 100vh;  
+ }       
+ 
+.txt-efeito{
+  visibility: hidden;
+}
+
+main section.hero {
+  background-color: var(--colorBody);
+  min-height: 100vh;
+}
+
+.hero > .interface {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 120px;
+  padding: 120px 2%;
+}
+
+main .txt-hero {
+  color: var(--colorWhite);
+}
+
+main .txt-hero h1 {
+  line-height: 2.0;
+  font-size: 100px;
+  text-align: center ;
+}
+
+main .txt-hero h2 {
+  font-size: 25px;
+  text-align: center;
+}
+
+main .txt-hero p {
+  line-height: 1.0;
+  margin: 24px 0;
+}
+
+/* Botões Hero */
+
+main .txt-hero {
+  text-align: center;
+}
+
+.hero-downloads {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.hero .txt-hero button {
+  min-width: 150px;
+  height: 35px;
+  padding: 0 12px;
+  white-space: nowrap;
+  background-color: transparent;
+  border-radius: 5px;
+  border: 2px solid var(--colorWhite);
+  color: var(--colorWhite);
+  transition: 0.5s;
+  cursor: pointer;
+}
+
+.hero .txt-hero button:hover {
+  background-color: var(--colorWhite);
+  color: var(--background);
+}
+
+/*Beneficios*/
+
+.beneficios{
+  background-image: url('../../assets/landing/Background.png');
+  background-size: cover;       
+  background-position: center; 
+  background-repeat: no-repeat; 
+  min-height: 100vh;           
+}
+
+.beneficios-efeito, .video-wrapper-efeito{
+  visibility: hidden;
+}
+
+.beneficios > .interface {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+main .txt-beneficios h1 {
+  margin: 24px 0;
+}
+
+.card-beneficios {
+  display: flex;
+  gap: 40px;
+  width: 100%;
+  margin-top: 70px;
+}
+
+.card-beneficios > .Sindicos,
+.card-beneficios > .Moradores {
+  width: 400px;
+  height: 500px;
+  background-color: var(--ColorDarkGreen);
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  align-items: center;
+  border-radius: 15px;
+  border: 2px solid var(--ColorGreen);
+}
+
+.Sindicos img,
+.Moradores img {
+  margin-top: 30px;
+  background-color: var(--colorbrown);
+  border-radius: 15px;
+  border: 5px solid var(--colorbrown);
+}
+
+.card-beneficios h1 {
+  font-size: 1.2em;
+  color: var(--colorWhite);
+}
+
+.card-beneficios p{
+ gap: 40px;
+}
+
+.video-wrapper {
+  max-width: 300px;
+  height: 600px;  
+  margin-top: -50px;
+  margin-left: 110px;
+}
+
+.side-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/*recursos*/
+
+.recursos{
+  background-image: url('../../assets/landing/Background2.png');
+  background-size: cover;       
+  background-position: center; 
+  background-repeat: no-repeat; 
+  height: 100vh;  
+}
+
+.notebook-efeito, .Recursos-efeito{
+  visibility: hidden;
+}
+
+.recursos > .interface {
+  padding: 150px 2%;
+}
+
+.card-recursos {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 200px; 
+  width: 100%;
+  margin: 0 auto;
+}
+
+.notebook-wrapper {
+  max-width: 600px;        
+}
+
+.notebook-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.Recursos h1{
+  padding: 30px;
+  text-align: center;
+  margin-top: -50px;
+}
+
+/*Rodapé*/
+
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--footer);
+  border-top: 1px solid var(--footerborder);
+}
+
+
+.footer-text {
+  margin: 0;
+}
+
+
+/*responsivel*/
+
+@media screen and (max-width: 1240px){
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  .hero > .interface {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+  }
+
+  .card-beneficios {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 24px;
+    width: 100%;
+  }
+
+  .video-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .card-recursos{
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 24px;
+    width: 100%;    
+  }
+
+  .notebook-wrapper{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin: 0 auto;    
+  }
+
+  .video-wrapper video,
+  .side-video {
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
+
+/*header*/
+
+  .menu-desktop{
+    display:none;
+  }
+  .btn{
+    display:none;
+  }
+
+  .btn-abrir-menu {
+    display: block;
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 28px;
+    cursor: pointer;
+  }
+
+  .menu-mobile {
+    display: block;
+    background-color: #111c18;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 99999;
+    width: 0%;
+    overflow: hidden;
+    transition: width 0.3s ease;
+  }
+
+  .menu-mobile.abrir-menu {
+    width: 70%;
+    max-width: 300px;
+  }
+
+  .menu-mobile .btn-fechar {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    font-size: 24px;
+    padding: 20px 25px;
+    cursor: pointer;
+  }
+
+  .menu-mobile nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    text-align: right;
+  }
+
+  .menu-mobile nav ul li a {
+    display: block;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 18px;
+    padding: 18px 28px;
+    transition: background 0.2s;
+  }
+
+  .menu-mobile nav ul li a:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .menu-mobile nav ul li button {
+    display: block;
+    width: 100%;
+    border: none;
+    color: #ffffff;
+    background: transparent;
+    text-decoration: none;
+    font-size: 18px;
+    padding: 18px 28px;
+    text-align: right;
+    cursor: pointer;
+  }
+
+  .overlay-menu {
+    background-color: rgba(0, 0, 0, 0.65);
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 88888;
+  }
+}

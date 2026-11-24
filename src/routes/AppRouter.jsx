@@ -6,10 +6,12 @@ import HomePage from '../pages/homepage/HomePage.jsx'
 import SettingsPage from '../pages/settings/SettingsPage.jsx'
 import { AdminRegistrationRoute, LoginRoute, ProtectedRoute } from './ProtectedRoute.jsx'
 import Tickets from '../pages/tickets/ticketpage.jsx'
+import LandingPage from '../pages/landing/LandingPage.jsx'
 
 export default function AppRouter() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route
         path="/login"
         element={
@@ -35,7 +37,7 @@ export default function AppRouter() {
         }
       />
       <Route
-        path="/"
+        path="/home"
         element={
           <ProtectedRoute>
             <HomePage />

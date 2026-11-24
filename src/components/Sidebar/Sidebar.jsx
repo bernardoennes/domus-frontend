@@ -6,7 +6,7 @@ import { useTheme } from '../../context/ThemeContext.jsx'
 import styles from './Sidebar.module.css'
 
 const navItems = [
-  { id: 'home', label: 'Home', iconName: 'House', path: '/' },
+  { id: 'home', label: 'Home', iconName: 'House', path: '/home' },
   { id: 'reservas', label: 'Reservas', iconName: 'CalendarCheck', path: '/reservas' },
   { id: 'tickets', label: 'Tickets', iconName: 'Ticket', path: '/tickets' },
   { id: 'avisos', label: 'Avisos', iconName: 'Bell', path: '/avisos' }
