@@ -86,7 +86,8 @@ export default function useReservationForm({
   const [syncedAreas, setSyncedAreas] = useState(areas)
   if (syncedAreas !== areas) {
     setSyncedAreas(areas)
-    if (areas[0]) {
+    const keepsSelectedArea = areas.some((area) => String(area.id) === selectedAreaId)
+    if (!keepsSelectedArea && areas[0]) {
       const suggestedTimes = getSuggestedTimes(areas[0])
       setSelectedAreaId(String(areas[0].id))
       setSelectedStart(suggestedTimes.start)

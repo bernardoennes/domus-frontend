@@ -1,12 +1,23 @@
 import { useState, useEffect } from 'react'
-import { MagnifyingGlass, Plus, PencilSimple, Paperclip } from '@phosphor-icons/react'
+import { MagnifyingGlass, Plus, PencilSimple } from '@phosphor-icons/react'
 import Header from '../../components/Header/Header.jsx'
 import PageSubheader from '../../components/PageSubheader/PageSubheader.jsx'
 import Select from '../../components/Select/Select.jsx'
 import Sidebar from '../../components/Sidebar/Sidebar.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { createTicket, fetchTickets, updateTicketStatus } from '../../services/ticketService.js'
+import { TICKET_STATUSES, createTicket, fetchTickets, updateTicketStatus } from '../../services/ticketService.js'
+import { canManageTickets } from '../../utils/permissions.js'
 import styles from './ticketpage.module.css'
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000
+
+function isWithinPeriod(createdAt, period) {
+  if (period === 'all') {
+    return true
+  }
+
+  return new Date(createdAt).getTime() >= Date.now() - Number(period) * DAY_IN_MS
+}
 
 export default function Tickets() {
   const [isSidebarExpanded, setIsSidebarExpanded] = useState(false)
@@ -15,6 +26,7 @@ export default function Tickets() {
 
   const userName = user?.name ?? 'Morador'
   const accessType = membership?.access_type ?? 'Não definido'
+  const canManage = canManageTickets(accessType)
 
   const [ticketState, setTicketState] = useState({ organisationId: null, tickets: [], loading: true })
   const currentOrganisationId = String(organisationId ?? '')
@@ -69,7 +81,7 @@ export default function Tickets() {
     const newTicketData = {
       code: generatedCode,
       assunto: novoAssunto,
-      solicitacao: accessType === 'morador' ? 'Morador' : 'Administração',
+      solicitacao: accessType === 'CONDOMINO' ? 'Morador' : 'Administração',
       categoria: novaCategoria,
       local: novoLocal,
       situacao: 'Em aberto',
@@ -87,6 +99,7 @@ export default function Tickets() {
       }))
       setIsNewTicketModalOpen(false)
       setNovoAssunto('')
+      setNovaCategoria('Manutenção Predial')
       setNovoLocal('')
       setNovaDescricao('')
     } catch (error) {
@@ -98,7 +111,7 @@ export default function Tickets() {
     if (!selectedTicket || !organisationId) return
 
     try {
-      const updatedTicket = await updateTicketStatus(organisationId, selectedTicket.id, newStatus)
+      const updatedTicket = await updateTicketStatus(organisationId, selectedTicket.id, newStatus, accessType)
       setTicketState((current) => ({
         organisationId: String(organisationId),
         tickets: (current.organisationId === String(organisationId) ? current.tickets : []).map((ticket) => (
@@ -116,7 +129,7 @@ export default function Tickets() {
     const combinaStatus = statusFiltro === 'Todos' || t.situacao?.toLowerCase() === statusFiltro.toLowerCase()
     const combinaBusca = (t.assunto || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
                           (t.code || '').toLowerCase().includes(termoBusca.toLowerCase())
-    return combinaStatus && combinaBusca
+    return combinaStatus && combinaBusca && isWithinPeriod(t.created_at, periodoFiltro)
   })
 
   return (
@@ -194,7 +207,7 @@ export default function Tickets() {
                   onChange={setStatusFiltro}
                   options={[
                     { value: 'Todos', label: 'Status: Todos' },
-                    ...['Em aberto', 'Em andamento', 'Resolvido'].map((value) => ({ value, label: value })),
+                    ...TICKET_STATUSES.map((value) => ({ value, label: value })),
                   ]}
                 />
                 <Select
@@ -261,7 +274,7 @@ export default function Tickets() {
                         <td className={styles.tableActionCell}>
                           <button
                             onClick={() => setSelectedTicket(ticket)}
-                            title="Editar/Atender Chamado"
+                            title={canManage ? 'Editar/Atender Chamado' : 'Ver chamado'}
                             className={styles.editButton}
                           >
                             <PencilSimple size={18} weight="regular" />
@@ -363,31 +376,6 @@ export default function Tickets() {
                     className={styles.textArea}
                   />
                 </div>
-
-                <div>
-                  <label className={styles.fieldLabel}>
-                    Anexos (opcional)
-                  </label>
-                  <div className={`${styles.dialogOverlay} ${styles.attachments}`}>
-                    <div className={styles.attachmentsContent}>
-                      <Paperclip size={20} weight="regular" className={styles.attachmentIcon} />
-                      <div>
-                        <strong className={styles.attachmentTitle}>
-                          Arraste arquivos para cá ou selecione no seu computador
-                        </strong>
-                        <span className={styles.formHint}>
-                          JPG, PNG ou PDF. Até 5 arquivos de 10 MB cada.
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className={styles.attachmentButton}
-                    >
-                      Selecionar arquivos
-                    </button>
-                  </div>
-                </div>
               </div>
 
               <div className={styles.formFooter}>
@@ -423,7 +411,7 @@ export default function Tickets() {
           <div className={`${styles.dialog} ${styles.ticketDetailsDialog}`}>
             <div className={styles.detailsHeader}>
               <h2 className={styles.detailsTitle}>
-                Gerenciar Chamado {selectedTicket.code}
+                Chamado {selectedTicket.code}
               </h2>
               <button
                 onClick={() => setSelectedTicket(null)}
@@ -449,15 +437,18 @@ export default function Tickets() {
             </div>
 
             <div className={styles.statusLabel}>
-              Alterar Situação:
-              <Select
-                className={styles.statusSelect}
-                ariaLabel="Alterar situação"
-                value={selectedTicket.situacao}
-                onChange={handleUpdateStatus}
-                options={['Em aberto', 'Em andamento', 'Resolvido']
-                  .map((value) => ({ value, label: value }))}
-              />
+              {canManage ? 'Alterar Situação:' : 'Situação:'}
+              {canManage ? (
+                <Select
+                  className={styles.statusSelect}
+                  ariaLabel="Alterar situação"
+                  value={selectedTicket.situacao}
+                  onChange={handleUpdateStatus}
+                  options={TICKET_STATUSES.map((value) => ({ value, label: value }))}
+                />
+              ) : (
+                <strong>{selectedTicket.situacao}</strong>
+              )}
             </div>
 
             <div className={styles.detailsActions}>

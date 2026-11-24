@@ -73,14 +73,19 @@ export function readDatabase() {
 
   if (!('announcements' in database)) database.announcements = []
   if (!('tickets' in database)) database.tickets = []
-  database.areas = database.areas.map((area) => ({
-    ...area,
-    is_deleted: Boolean(area.is_deleted),
-  }))
 
   if (TABLES.some((table) => !Array.isArray(database[table]))) {
     throw new Error('O formato dos dados salvos é inválido.')
   }
+
+  database.areas = database.areas.map((area) => ({
+    ...area,
+    is_deleted: Boolean(area.is_deleted),
+  }))
+  database.announcements = database.announcements.map((announcement) => ({
+    ...announcement,
+    comments: Array.isArray(announcement.comments) ? announcement.comments : [],
+  }))
 
   return database
 }

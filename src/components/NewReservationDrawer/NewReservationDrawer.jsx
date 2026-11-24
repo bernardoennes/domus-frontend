@@ -185,9 +185,6 @@ export default function NewReservationDrawer({
                     : 'Área disponível no horário escolhido.'}
             </p>
 
-            <p className={styles.localNotice}>
-              A reserva será confirmada após o processamento pelo servidor.
-            </p>
             <button
               className={styles.submitButton}
               type="submit"

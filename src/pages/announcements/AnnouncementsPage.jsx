@@ -17,6 +17,7 @@ import Sidebar from '../../components/Sidebar/Sidebar.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import useAnnouncements from '../../hooks/useAnnouncements.js'
 import { canManageCondominium } from '../../utils/permissions.js'
+import { formatCommentCount } from '../../utils/formatters.js'
 import styles from './AnnouncementsPage.module.css'
 
 const COMMENT_CHARACTER_LIMIT = 200
@@ -30,10 +31,6 @@ function formatDate(dateValue) {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(new Date(dateValue))
-}
-
-function countComments(comments) {
-  return comments.length
 }
 
 function getAnnouncementPreview(body) {
@@ -82,7 +79,7 @@ function AnnouncementCard({ announcement, onTogglePinned, canManage, animationDe
         <span>{announcement.author?.name ?? 'Morador'} · {formatDate(announcement.createdAt)}</span>
         <span className={styles.commentLink}>
           <ChatCircleDots size={17} aria-hidden="true" />
-          {countComments(announcement.comments)} comentários
+          {formatCommentCount(announcement.comments.length)}
         </span>
       </div>
     </article>
@@ -385,7 +382,6 @@ function CommentItem({ item, comments, onReply, onEdit, onDelete, currentUserId 
             <span className={styles.characterCount}>
               {replyText.length}/{COMMENT_CHARACTER_LIMIT} caracteres
             </span>
-            {error && <p className={styles.formError} role="alert">{error}</p>}
             <button type="submit" className={styles.primaryButton}>Enviar resposta</button>
           </form>
         )}
@@ -796,14 +792,14 @@ export default function AnnouncementsPage() {
                   )}
                   <div className={styles.postFooter}>
                     <ChatCircleDots size={17} aria-hidden="true" />
-                    {countComments(announcement.comments)} comentários
+                    {formatCommentCount(announcement.comments.length)}
                   </div>
                 </article>
 
                 <section className={styles.conversation} aria-labelledby="conversation-title">
                   <div className={styles.conversationHeading}>
                     <h2 id="conversation-title">Conversa</h2>
-                    <span>{countComments(announcement.comments)} comentários</span>
+                    <span>{formatCommentCount(announcement.comments.length)}</span>
                   </div>
                   <div className={styles.commentList}>
                     {announcement.comments

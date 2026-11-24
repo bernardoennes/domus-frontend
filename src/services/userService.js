@@ -1,5 +1,6 @@
 import { readDatabase, readSessionUserId, updateDatabase } from '../lib/localDatabase.js'
 import { createPasswordHash, verifyPassword } from '../lib/password.js'
+import { getPasswordError } from '../utils/passwordValidation.js'
 
 export function maskCpf(cpf) {
   const digits = String(cpf ?? '').replace(/\D/g, '')
@@ -61,10 +62,22 @@ export async function updatePassword({ currentPassword, newPassword }) {
     throw new Error('Senha atual incorreta. Verifique e tente novamente.')
   }
 
+  const passwordError = getPasswordError(newPassword)
+
+  if (passwordError) {
+    throw new Error(passwordError)
+  }
+
   const password = await createPasswordHash(newPassword)
 
   updateDatabase((database) => {
-    database.users.find((item) => item.id === user.id).password = password
+    const storedUser = database.users.find((item) => item.id === user.id)
+
+    if (storedUser?.password?.hash !== user.password.hash) {
+      throw new Error('Sua senha foi alterada em outra sessão. Tente novamente.')
+    }
+
+    storedUser.password = password
   })
 }
 

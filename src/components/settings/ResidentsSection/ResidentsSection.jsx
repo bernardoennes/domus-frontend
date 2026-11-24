@@ -181,7 +181,7 @@ export default function ResidentsSection({
         <div className={styles.errorState} role="alert">{error}</div>
       ) : items.length === 0 ? (
         <div className={styles.emptyState}>
-          Nenhum condômino visível. Confirme se há moradores cadastrados e se a policy RLS permite a leitura nesta organização.
+          Nenhum condômino cadastrado.
         </div>
       ) : (
         <section className={styles.listCard} aria-labelledby="residents-list-title">

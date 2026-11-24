@@ -10,6 +10,7 @@ import useAnnouncements from '../../hooks/useAnnouncements.js'
 import { fetchCalendarReservations, getNationalHolidays } from '../../services/calendarService.js'
 import { fetchTickets } from '../../services/ticketService.js'
 import { getNumberedAreas } from '../../utils/reservationUtils.js'
+import { formatCommentCount } from '../../utils/formatters.js'
 import styles from './HomePage.module.css'
 
 const dashboardPanels = ['Avisos', 'Calendário', 'Tickets']
@@ -229,7 +230,7 @@ export default function HomePage() {
                       <small>
                         {announcement.author?.name ?? 'Morador'}
                         {' · '}
-                        {announcement.comments.length} comentários
+                        {formatCommentCount(announcement.comments.length)}
                       </small>
                     </Link>
                   ))}

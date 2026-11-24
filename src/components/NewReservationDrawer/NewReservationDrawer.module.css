@@ -188,13 +188,6 @@
   color: var(--error-text);
 }
 
-.localNotice {
-  margin: -8px 0 0;
-  color: var(--text-muted);
-  font-size: 10px;
-  line-height: 1.45;
-}
-
 .submitButton {
   display: flex;
   align-items: center;

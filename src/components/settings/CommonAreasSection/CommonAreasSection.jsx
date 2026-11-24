@@ -6,6 +6,7 @@ import RemoveResidentModal from '../RemoveResidentModal/RemoveResidentModal.jsx'
 import EditMemberModal from '../EditMemberModal/EditMemberModal.jsx'
 import styles from './CommonAreasSection.module.css'
 import { AREA_TYPE_LABELS } from '../../../services/commonAreaService.js'
+import { getNumberedAreas } from '../../../utils/reservationUtils.js'
 
 const weekdayOptions = [
   { value: 1, label: 'Seg' },
@@ -142,20 +143,6 @@ function AvailableWeekdays({ days }) {
   )
 }
 
-function getNumberedAreas(items) {
-  const typeCounts = new Map()
-
-  return items.map((area) => {
-    const sequence = (typeCounts.get(area.area_type) ?? 0) + 1
-    typeCounts.set(area.area_type, sequence)
-
-    return {
-      ...area,
-      displayName: `${AREA_TYPE_LABELS[area.area_type] ?? area.area_type} ${sequence}`,
-    }
-  })
-}
-
 export default function CommonAreasSection({
   items = [],
   error = '',
@@ -284,7 +271,7 @@ export default function CommonAreasSection({
         <div className={styles.errorState} role="alert">{error}</div>
       ) : numberedAreas.length === 0 ? (
         <div className={styles.emptyState}>
-          Nenhuma área visível. Confirme se há áreas cadastradas e se a policy RLS permite a leitura para esta organização.
+          Nenhuma área comum cadastrada.
         </div>
       ) : (
         <section className={styles.listCard} aria-label="Áreas comuns cadastradas">

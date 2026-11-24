@@ -1,4 +1,7 @@
 import { readDatabase, updateDatabase } from '../lib/localDatabase.js'
+import { canManageTickets } from '../utils/permissions.js'
+
+export const TICKET_STATUSES = ['Em aberto', 'Em andamento', 'Resolvido']
 
 function assertOrganisation(organisationId) {
   if (!organisationId) {
@@ -8,11 +11,7 @@ function assertOrganisation(organisationId) {
 
 export async function fetchTickets(organisationId, userId, accessType) {
   assertOrganisation(organisationId)
-  const normalizedAccessType = String(accessType ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toUpperCase()
-  const canViewAll = normalizedAccessType === 'SINDICO' || normalizedAccessType === 'FUNCIONARIO'
+  const canViewAll = canManageTickets(accessType)
 
   return readDatabase().tickets
     .filter((item) => (
@@ -37,8 +36,17 @@ export async function createTicket(organisationId, values) {
   })
 }
 
-export async function updateTicketStatus(organisationId, ticketId, situacao) {
+export async function updateTicketStatus(organisationId, ticketId, situacao, accessType) {
   assertOrganisation(organisationId)
+
+  if (!canManageTickets(accessType)) {
+    throw new Error('Apenas o síndico e os funcionários podem alterar a situação do chamado.')
+  }
+
+  if (!TICKET_STATUSES.includes(situacao)) {
+    throw new Error('Selecione uma situação válida para o chamado.')
+  }
+
   return updateDatabase((database) => {
     const ticketIndex = database.tickets.findIndex((item) => (
       String(item.id) === String(ticketId) && String(item.organisation_id) === String(organisationId)

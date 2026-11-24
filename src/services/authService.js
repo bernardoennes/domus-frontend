@@ -8,12 +8,9 @@ import {
   writeSessionUserId,
 } from '../lib/localDatabase.js'
 import { createPasswordHash, verifyPassword } from '../lib/password.js'
-import { isValidCpf } from '../utils/cpfValidation.js'
+import { isValidCpf, normalizeCpf } from '../utils/cpfValidation.js'
+import { getPasswordError } from '../utils/passwordValidation.js'
 import { maskCpf } from './userService.js'
-
-function normalizeCpf(cpf) {
-  return String(cpf ?? '').replace(/\D/g, '')
-}
 
 function sanitizeUser(user) {
   return {
@@ -68,8 +65,10 @@ export function needsAdminSetup() {
 }
 
 function assertValidPassword(password) {
-  if (!password || password.length < 8 || password.length > 128) {
-    throw new Error('A senha deve ter entre 8 e 128 caracteres.')
+  const passwordError = getPasswordError(password)
+
+  if (passwordError) {
+    throw new Error(passwordError)
   }
 }
 
