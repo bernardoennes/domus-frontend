@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import ScrollReveal from 'scrollreveal'
-import notebook from '../../assets/landing/Notebook.webm'
+import notebook from '../../assets/landing/desktop.webm'
 
 export default function Recursos() {
   useEffect(() => {
